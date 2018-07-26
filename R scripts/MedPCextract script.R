@@ -246,6 +246,7 @@ MedPCextract <- function(funcdirect, datafolder, dataForRdir, dataForRCumulative
         CSplusTaskAcc <- c()
         CSminusTaskAcc <- c()
         ITIPeriodentryDur <- c()
+        ITIlatency <- c()
         PercShortDSent <- c()
         
         for (i in 1:length(alldata)){
@@ -258,6 +259,7 @@ MedPCextract <- function(funcdirect, datafolder, dataForRdir, dataForRCumulative
                 latencyCSminus[[i]] <- mean(alldata[[i]]$CSminusLat, na.rm=T)
                 latencyCSplusSEM[[i]] <-sd(alldata[[i]]$CSplusLat, na.rm=T)/sqrt(length(alldata[[i]]$CSplusLat[which(alldata[[i]]$CSplusLat >0)]))
                 latencyCSminusSEM[[i]] <-sd(alldata[[i]]$CSminusLat, na.rm=T)/sqrt(length(alldata[[i]]$CSminusLat[which(alldata[[i]]$CSminusLat >0)]))
+                ITIlatency[[i]]<- mean(alldata[[i]]$ITIlatency, na.rm=T)
                 
                 DSentryDur[[i]] <- mean(alldata[[i]]$CSPlusEntryDur, na.rm=T)
                 NSentryDur[[i]] <- mean(alldata[[i]]$CSMinusEntryDur, na.rm=T)
@@ -274,6 +276,7 @@ MedPCextract <- function(funcdirect, datafolder, dataForRdir, dataForRCumulative
         csacqidx["NSperc"]<- NSperc
         csacqidx["ITItotal"]<- ITItotal
         csacqidx["ITIpersec"]<- ITIperSec
+        csacqidx["ITIlatency"] <- ITIlatency
         csacqidx["LatencyCSplus"] <- latencyCSplus
         csacqidx["LatencyCSminus"] <- latencyCSminus
         csacqidx["LatencyCSplusSEM"] <- latencyCSplusSEM
@@ -310,6 +313,16 @@ MedPCextract <- function(funcdirect, datafolder, dataForRdir, dataForRCumulative
                 }))
         })
         
+        DSlatency <- lapply(seq(1, length(rats)), function(k){
+                do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
+                        sessIdx <- idx[[k]][m]
+                        DSresp <- (!is.na(alldata[[sessIdx]]$CSplusresponse))*1
+                        DSlat <- alldata[[sessIdx]]$CSplusLat
+                        DSlat[which(is.na(DSlat))] <- cuelength
+                        DSlat
+                }))
+        })
+        
         DStimeToSpare <- lapply(seq(1, length(rats)), function(k){
                 do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
                         sessIdx <- idx[[k]][m]
@@ -330,6 +343,17 @@ MedPCextract <- function(funcdirect, datafolder, dataForRdir, dataForRCumulative
                 }))
         })
         
+        NSlatency <- lapply(seq(1, length(rats)), function(k){
+                do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
+                        sessIdx <- idx[[k]][m]
+                        NSresp <- (!is.na(alldata[[sessIdx]]$CSminusresponse))*1
+                        NSlat <- alldata[[sessIdx]]$CSminusLat
+                        NSlat[which(is.na(NSlat))] <- cuelength
+                        NSlat
+                }))
+        })
+       
+        
         DStaskAcc <- lapply(seq(1, length(rats)), function(k){
                 do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
                         sessIdx <- idx[[k]][m]
@@ -346,6 +370,15 @@ MedPCextract <- function(funcdirect, datafolder, dataForRdir, dataForRCumulative
                 }))
         })
         
+        ITIlatency <- lapply(seq(1, length(rats)), function(k){
+                do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
+                        sessIdx <- idx[[k]][m]
+                        ITIlatency <- alldata[[sessIdx]]$ITIlatency
+                        ITIlatency
+                }))
+        })
+        
+        
         #Now make object of DStaskAcc without excluding the first trial of each session. Not for CP calculation
         DStaskAccAllTrials <- lapply(seq(1, length(rats)), function(k){
                 do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
@@ -361,34 +394,34 @@ MedPCextract <- function(funcdirect, datafolder, dataForRdir, dataForRCumulative
         })
         
         
-        CTratio <- lapply(seq(1, length(rats)), function(k){
-                do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
-                        sessIdx <- idx[[k]][m]
-                        CTratio <- alldata[[sessIdx]]$CTratioPerTrial
-                        CTratio[is.na(CTratio)] <- 0
-                        CTratio
-                }))
-        })
-        
-        PreRespondedCSplus <- lapply(seq(1, length(rats)), function(k){
-                
-                cumsum(do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
-                        sessIdx <- idx[[k]][m]
-                        RespondedCSplusPerSess <- diff(alldata[[sessIdx]]$PreviouslyRespondedCSplusTrials)
-                })
-                )
-                )
-        })
-        
-        PreRespondedCSminus <- lapply(seq(1, length(rats)), function(k){
-                
-                cumsum(do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
-                        sessIdx <- idx[[k]][m]
-                        RespondedCSminusPerSess <- diff(alldata[[sessIdx]]$PreviouslyRespondedCSminusTrials)
-                })
-                )
-                )
-        })
+        # #CTratio <- lapply(seq(1, length(rats)), function(k){
+        #         do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
+        #                 sessIdx <- idx[[k]][m]
+        #                 CTratio <- alldata[[sessIdx]]$CTratioPerTrial
+        #                 CTratio[is.na(CTratio)] <- 0
+        #                 CTratio
+        #         }))
+        # })
+        # 
+        # PreRespondedCSplus <- lapply(seq(1, length(rats)), function(k){
+        #         
+        #         cumsum(do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
+        #                 sessIdx <- idx[[k]][m]
+        #                 RespondedCSplusPerSess <- diff(alldata[[sessIdx]]$PreviouslyRespondedCSplusTrials)
+        #         })
+        #         )
+        #         )
+        # })
+        # 
+        # PreRespondedCSminus <- lapply(seq(1, length(rats)), function(k){
+        #         
+        #         cumsum(do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
+        #                 sessIdx <- idx[[k]][m]
+        #                 RespondedCSminusPerSess <- diff(alldata[[sessIdx]]$PreviouslyRespondedCSminusTrials)
+        #         })
+        #         )
+        #         )
+        # })
         
         
         ###### SAVING OBJECTS #########
@@ -402,10 +435,13 @@ MedPCextract <- function(funcdirect, datafolder, dataForRdir, dataForRCumulative
         save(NStimeToSpare, file=paste(dataForRCumulative, "NStimeToSpare.rdat", sep=""))
         save(DStaskAcc, file=paste(dataForRCumulative, "DStaskAcc.rdat", sep=""))
         save(NStaskAcc, file=paste(dataForRCumulative, "NStaskAcc.rdat", sep=""))
-        save(CTratio, file=paste(dataForRdir, "CTratio.rdat", sep=""))
-        save(PreRespondedCSplus, file=paste(dataForRdir, "PreRespondedCSplus.rdat", sep=""))
-        save(PreRespondedCSminus, file=paste(dataForRdir, "PreRespondedCSminus.rdat", sep=""))
-        save(DStaskAccAllTrials, file=paste(dataForRdir, "DStaskAccAllTrials.rdat", sep=""))
+        save(DSlatency,  file=paste(dataForRCumulative, "DSlatency.rdat", sep=""))
+        save(NSlatency,  file=paste(dataForRCumulative, "NSlatency.rdat", sep=""))
+        save(ITIlatency,  file=paste(dataForRCumulative, "ITIlatency.rdat", sep=""))
+        #save(CTratio, file=paste(dataForRdir, "CTratio.rdat", sep=""))
+        #save(PreRespondedCSplus, file=paste(dataForRdir, "PreRespondedCSplus.rdat", sep=""))
+        #save(PreRespondedCSminus, file=paste(dataForRdir, "PreRespondedCSminus.rdat", sep=""))
+        #save(DStaskAccAllTrials, file=paste(dataForRdir, "DStaskAccAllTrials.rdat", sep=""))
 }
 
 funcdirect <- "E:/Dropbox/NMDA/R functions/"
