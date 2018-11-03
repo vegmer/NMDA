@@ -125,14 +125,12 @@ plotFRandCP <- function(cue="S+", experiment, masterDF, graphFolder=MixedGraphFo
                                         selUnits <- unique(dataSel$allUnitIdx)
                                     
                                         cueExcUnits <- as.logical(sapply(seq(1, length(selUnits)), function(m){
-                                                #Find out the Poisson distribution of FR of that unit during BL throughout the session in which it was recorded
                                                 unitSession <- filter(masterDF[[c]], masterDF[[c]]$allUnitIdx==selUnits[m])
                                                 exc <- unitSession$CueExcited[1]
                                                 exc
                                         }))
                                         
                                         cueInhUnits <- as.logical(sapply(seq(1, length(selUnits)), function(m){
-                                                #Find out the Poisson distribution of FR of that unit during BL throughout the session in which it was recorded
                                                 unitSession <- filter(masterDF[[c]], masterDF[[c]]$allUnitIdx==selUnits[m])
                                                 inh <- unitSession$CueInhibited[1]
                                                 inh

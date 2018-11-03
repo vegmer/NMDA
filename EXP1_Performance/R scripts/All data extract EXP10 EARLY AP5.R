@@ -4,7 +4,12 @@
 ### EXPERIMENT 1A: EARLY AP5 VS VEH TEST                  ###
 #############################################################
 
+### LOAD IMPORTANT LIBRARIES
+install.packages("matrixStats")
+install.packages('ez')
+
 library(matrixStats)
+library(ez)
 
 Exp1folder <- "E:/Dropbox/NMDA/EXP1_Performance/"
 
@@ -27,7 +32,10 @@ load(file=paste(funcdirect, "errBars.r", sep=""))
 load(file=paste(funcdirect, "errCloud.r", sep=""))
 load(file=paste(funcdirect, "psthInf.r", sep=""))
 load(file=paste(funcdirect, "BinIndexCalculator.R", sep=""))
-
+load(file=paste(funcdirect, "dotplot.r", sep=""))
+load(file=paste(funcdirect, "KC.sigbins.R", sep=""))
+load(file=paste(funcdirect, "KC.inhib.sigbins.R", sep=""))
+load(file=paste(funcdirect, "prePostInf_FR.r", sep=""))
 
 ###########################
 ###########################
@@ -49,6 +57,7 @@ neuGraphFolder <- paste(Exp1folder, "Graphs/Neuronal/", sep="")
 MixedGraphFolder <- paste(subTestFolder, "Graphs/Mixed/", sep="")
 CPGraphFolder <- paste(subTestFolder, "Graphs/Behavior/Change point/", sep="")
 NEXfiles <- paste(subTestFolder, "NEX files/", sep="")
+preVsPostFRFolder <- "E:/Dropbox/NMDA/EXP1_Performance/Graphs/Neuronal/FR pre vs post scatterplot/"
 
 
 ### EARLY AP5 #################################################################
@@ -72,7 +81,7 @@ NEXfiles <- paste(subTestFolder, "NEX files/", sep="")
 # Extract behavioral data from MedPC files. This function saves the generated objects in the "dataForRdir". You have to load them (see next line of code) to bring them to your environment.
 # This will give you a few error messages if, in any file, the first cue comes on after 5s of session onset. Ignore it, it just assigns NA to that trial, which is what you want.
 # The parameter 'consumeRewWdw' is just the segment of the ITI that we discard (for ITI latency calculations) bc we assume that, if the animal got a reward on the previous trial, he might still be consuming the reward.
-MedPCextract(cuelength=10, consumeRewWdw=4.9, funcdirect = funcdirect, datafolder = datafolder, dataForRdir = dataForRdir, dataForRCumulative=dataForRCumulative)
+MedPCextract(MovAvg="Impinged only", cuelength=10, funcdirect = funcdirect, datafolder = datafolder, dataForRdir = dataForRdir, dataForRCumulative=dataForRCumulative)
 
 # Load the behavior-related objects that you generated with the previous function. The main objects that we loaded are 'alldata' (detailed data by session by animal) and 'csacqidx' (an index of all the files). Name all sessions on csacqidx the same (i.e. '1')
 files <- paste(dataForRdir, list.files(dataForRdir), sep=""); for(i in 1:length(files)){load(files[[i]])}
@@ -139,19 +148,48 @@ ITIlatByBin <- lapply(seq(1, length(ITIlatency)), function(x){
         })
 })
 
+# Make an object with the DStaskAccByBin for later statistical analyses
+# Change "drug="VEH"" when I run this for AP5
+DStaskAccByBin_LongFormat <- do.call("rbind", lapply(seq(1, length(DStaskAccByBin)), function(k){
+        rat=as.character(rats[[k]])
+        a <- 1:length(DStaskAccByBin[[k]])
+        data.frame(rat=rat, bin=a, drug="VEH", perf=DStaskAccByBin[[k]])
+}))
+
+
 ### Make a long-format object with all these data for statistical analyses
 
 #Run all of the above lines FIRST for VEH rats and then this line:
+# Let's create objects to help us select the bins of interest for the pre and the post
+# The infusion took place after 30min and it lasted 12min. I'm going to use the 30min before the infusion as baseline and the 30min after the infusion as the post.
+PreInfLength <- 30*60            #In sec, baseline period (in my MedPC code it's always 30min)
+PostInfStart <- (30*60)+12*60    #In sec, time of infusion end (when my postinfusion period starts)
+PostInfEnd <- PostInfStart+30*60 #In sec, end of the window of interest after infusion (I made it 30min to match BL)
+
+BLbinIndex <- (1:minBinNo)[1:(PreInfLength/binsize)] #Bins that correspond with the baseline period (the 30min before the infusion). 
+PostInfBinIndex <- (1:minBinNo)[ceiling(PostInfStart/binsize):(PostInfEnd/binsize)] #Bins that correspond with the postinfusion period I want to study. In this case, the 30min after infusion.
+
 byBinDataEarlyVEH <- list(DSrespRatioByBin, NSrespRatioByBin, DSlatencyByBin, NSlatencyByBin, DStaskAccByBin, NStaskAccByBin, ITIlatByBin)
 IndexLabel <- c("S+.RR", "S-.RR", "S+.Latency", "S-.Latency", "S+.Spec.", "S-.Spec.", "ITI.Latency.")
 
 EarlyVEH_LongFormat <- do.call("rbind", lapply(seq(1, length(byBinDataEarlyVEH)), function(x){ #For each index
         mat <- do.call("rbind", byBinDataEarlyVEH[[x]])
-        BLmean <- rowMeans(mat[,BLbinIndex], na.rm=T) #Mean by subject PRE infusion
+        if(length(BLbinIndex)>1){
+                BLmean <- rowMeans(mat[,BLbinIndex], na.rm=T) #Mean by subject PRE infusion  
+        } else {
+                BLmean <- mean(mat[,BLbinIndex], na.rm=T) #Mean by subject PRE infusion
+        }
+        
         PostMean <- rowMeans(mat[,PostInfBinIndex], na.rm=T) #Mean by subject POST infusion
         ratnames <- paste("VEH", 1:nrow(mat), sep="_")
         return(data.frame(Drug="VEH", Rat=ratnames, Index=IndexLabel[x], Infusion=c(rep("Pre", nrow(mat)), rep("Post", nrow(mat))), Performance=c(BLmean, PostMean)))
 }))
+
+EarlyVEH_DStaskAccByBin_LongFormat <- DStaskAccByBin_LongFormat
+
+save(EarlyVEH_LongFormat, file=paste(dataForRdir, "EarlyVEH_LongFormat.rdat", sep=""))
+save(EarlyVEH_DStaskAccByBin_LongFormat, file=paste(dataForRdir, "EarlyVEH_DStaskAccByBin_LongFormat.rdat", sep=""))
+
 
 #Then repeat for AP5 rats and run these lines
 byBinDataEarlyAP5 <- list(DSrespRatioByBin, NSrespRatioByBin, DSlatencyByBin, NSlatencyByBin, DStaskAccByBin, NStaskAccByBin, ITIlatByBin)
@@ -165,35 +203,50 @@ EarlyAP5_LongFormat <- do.call("rbind", lapply(seq(1, length(byBinDataEarlyAP5))
         return(data.frame(Drug="AP5", Rat=ratnames, Index=IndexLabel[x], Infusion=c(rep("Pre", nrow(mat)), rep("Post", nrow(mat))), Performance=c(BLmean, PostMean)))
 }))
 
+EarlyAP5_DStaskAccByBin_LongFormat <- DStaskAccByBin_LongFormat
+
+
+save(EarlyAP5_LongFormat, file=paste(dataForRdir, "EarlyAP5_LongFormat.rdat", sep=""))
+save(EarlyAP5_DStaskAccByBin_LongFormat, file=paste(dataForRdir, "EarlyAP5_DStaskAccByBin_LongFormat.rdat", sep=""))
+
+###
+
 Early_LongFormat <- rbind(EarlyVEH_LongFormat, EarlyAP5_LongFormat)
+Early_LongFormatByBin <- rbind(EarlyVEH_DStaskAccByBin_LongFormat, EarlyAP5_DStaskAccByBin_LongFormat)
+        
+save(Early_LongFormat, file=paste(dataForRdir, "Early_LongFormat.rdat", sep=""))
+save(Early_LongFormatByBin, file=paste(dataForRdir, "Early_LongFormatByBin.rdat", sep=""))
+
 
 
 # Extract neuronal data from NEX files. 
 
 #VEH test: data aligned to DS and NS onset BEFORE and AFTER the infusion.
+postInfTargetWdw <- 1800+12*60+30*60 #For the post infusion window, I'll choose the period between the end of the infusion +30'.
 allNeuronsDSEarlyVEHPreInf <-  neuralhist (funcdirect=funcdirect, path=NEXfiles, event=1, startt=0, endt=1800, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
-allNeuronsDSEarlyVEHPostInf <-  neuralhist (funcdirect=funcdirect, path=NEXfiles, event=1, startt=1800, endt=3600, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
+allNeuronsDSEarlyVEHPostInf <-  neuralhist (funcdirect=funcdirect, path=NEXfiles, event=1, startt=2520, endt=postInfTargetWdw, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
 allNeuronsNSEarlyVEHPreInf <-  neuralhist (funcdirect=funcdirect, path=NEXfiles, event=2, startt=0, endt=1800, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
-allNeuronsNSEarlyVEHPostInf <-  neuralhist (funcdirect=funcdirect, path=NEXfiles, event=2, startt=2520, endt=3600, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
+allNeuronsNSEarlyVEHPostInf <-  neuralhist (funcdirect=funcdirect, path=NEXfiles, event=2, startt=2520, endt=postInfTargetWdw, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
 allNeuronsEntryDSEarlyVEHPreInf <- neuralhist (funcdirect=funcdirect, path=NEXfiles, event=9, startt=0, endt=1800, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
-allNeuronsEntryDSEarlyVEHPostInf <- neuralhist (funcdirect=funcdirect, path=NEXfiles, event=9, startt=2520, endt=3600, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
+allNeuronsEntryDSEarlyVEHPostInf <- neuralhist (funcdirect=funcdirect, path=NEXfiles, event=9, startt=2520, endt=postInfTargetWdw, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
 allNeuronsEntryNSEarlyVEHPreInf <- neuralhist (funcdirect=funcdirect, path=NEXfiles, event=14, startt=0, endt=1800, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
-allNeuronsEntryNSEarlyVEHPostInf <- neuralhist (funcdirect=funcdirect, path=NEXfiles, event=14, startt=2520, endt=3600, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
+allNeuronsEntryNSEarlyVEHPostInf <- neuralhist (funcdirect=funcdirect, path=NEXfiles, event=14, startt=2520, endt=postInfTargetWdw, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
 allNeuronsEntryITIEarlyVEHPreInf <- neuralhist (funcdirect=funcdirect, path=NEXfiles, event=10, startt=0, endt=1800, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
-allNeuronsEntryITIEarlyVEHPostInf <- neuralhist (funcdirect=funcdirect, path=NEXfiles, event=10, startt=2520, endt=3600, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
+allNeuronsEntryITIEarlyVEHPostInf <- neuralhist (funcdirect=funcdirect, path=NEXfiles, event=10, startt=2520, endt=postInfTargetWdw, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
 
 
 #AP5 test: data aligned to DS and NS onset BEFORE and AFTER the infusion.
+postInfTargetWdw <- 1800+12*60+30*60 #For the post infusion window, I'll choose the period between the end of the infusion +30'.
 allNeuronsDSEarlyAP5PreInf <-  neuralhist (funcdirect=funcdirect, path=NEXfiles, event=1, startt=0, endt=1800, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
-allNeuronsDSEarlyAP5PostInf <-  neuralhist (funcdirect=funcdirect, path=NEXfiles, event=1, startt=2520, endt=3600, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
+allNeuronsDSEarlyAP5PostInf <-  neuralhist (funcdirect=funcdirect, path=NEXfiles, event=1, startt=2520, endt=postInfTargetWdw, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
 allNeuronsNSEarlyAP5PreInf <-  neuralhist (funcdirect=funcdirect, path=NEXfiles, event=2, startt=0, endt=1800, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
-allNeuronsNSEarlyAP5PostInf <-  neuralhist (funcdirect=funcdirect, path=NEXfiles, event=2, startt=2520, endt=3600, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
+allNeuronsNSEarlyAP5PostInf <-  neuralhist (funcdirect=funcdirect, path=NEXfiles, event=2, startt=2520, endt=postInfTargetWdw, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
 allNeuronsEntryDSEarlyAP5PreInf <- neuralhist (funcdirect=funcdirect, path=NEXfiles, event=9, startt=0, endt=1800, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
-allNeuronsEntryDSEarlyAP5PostInf <- neuralhist (funcdirect=funcdirect, path=NEXfiles, event=9, startt=2520, endt=3600, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
+allNeuronsEntryDSEarlyAP5PostInf <- neuralhist (funcdirect=funcdirect, path=NEXfiles, event=9, startt=2520, endt=postInfTargetWdw, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
 allNeuronsEntryNSEarlyAP5PreInf <- neuralhist (funcdirect=funcdirect, path=NEXfiles, event=14, startt=0, endt=1800, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
-allNeuronsEntryNSEarlyAP5PostInf <- neuralhist (funcdirect=funcdirect, path=NEXfiles, event=14, startt=2520, endt=3600, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
+allNeuronsEntryNSEarlyAP5PostInf <- neuralhist (funcdirect=funcdirect, path=NEXfiles, event=14, startt=2520, endt=postInfTargetWdw, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
 allNeuronsEntryITIEarlyAP5PreInf <- neuralhist (funcdirect=funcdirect, path=NEXfiles, event=10, startt=0, endt=1800, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
-allNeuronsEntryITIEarlyAP5PostInf <- neuralhist (funcdirect=funcdirect, path=NEXfiles, event=10, startt=2520, endt=3600, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
+allNeuronsEntryITIEarlyAP5PostInf <- neuralhist (funcdirect=funcdirect, path=NEXfiles, event=10, startt=2520, endt=postInfTargetWdw, binw=50, psthmin=2, psthmax=10, cueexonly=F, allResults=T, side="both")
 
 
 ### GIVE THESE OBJECTS A UNIQUE NAME
@@ -278,6 +331,7 @@ plotPrePostBars <- function(data, color, xmiddle, barwidth, labelY, colLabel){
         for(i in 1:length(data)){lines(x=c(xmiddle-barwidth/2, xmiddle+barwidth/2), y=c(BLmean[i], PostMean[i]))}
 }
 
+#Define colors
 colindx <- c("#2171b5", "#cb181d") #Strong blue and red
 colindxB <- c("#bdd7e7", "#fcae91") #Less strong blue and red
 colindxC <- c("#eff3ff", "#fb6a4a") #Even less strong blue and red
@@ -292,6 +346,7 @@ colindxD <- c("#6baed6", "#fee5d9") #Lightest blue and red
 
 ## 1.1.1.1. Absolute scores
 plot.new()
+par(oma=c(2,2,2,2))
 plot.window(xlim=c(0, 1), ylim=c(0, 1))
 
 plotPrePostLines(data=byBinDataEarlyVEH[[1]], color=colindx[1], pch=15, scores="absolute") #VEH group, S+
@@ -300,14 +355,18 @@ plotPrePostLines(data=byBinDataEarlyAP5[[1]], color=colindx[2], pch=15, scores="
 plotPrePostLines(data=byBinDataEarlyVEH[[2]], color=colindx[1], pch=22, scores="absolute", jitter=0.015) #VEH group, S-
 plotPrePostLines(data=byBinDataEarlyAP5[[2]], color=colindx[2], pch=22, scores="absolute", jitter=0.015) #AP5 group, S-
 
-axis(side=1, at=c(0, 1), labels=c("Preinfusion", "Postinfusion"), cex.axis=1, font=2)
+axis(side=1, at=c(0, 1), labels=c("Preinfusion", "Postinfusion"), cex.axis=1.4, font=2)
 axis(side=2, at=seq(0, 1, by=0.2, labels=seq(0, 1, 0.2)), font=2, las=2, pos=-0.1)
+mtext(side=2, line=4, text="Proportion", cex=1.4, font=2)
 
 legend("bottomright", legend = c("S+", "S-"), pch = c(15, 22), bty = "n" )
 legend("bottomleft", legend=c("VEH", "AP5"), lty=1, col=colindx, bty="n")
 
+
+
 ## 1.1.1.2. Percentage of BL 
 plot.new()
+par(oma=c(2,2,2,2))
 plot.window(xlim=c(0, 1), ylim=c(0, 120))
 
 plotPrePostLines(data=byBinDataEarlyVEH[[1]], color=colindx[1], pch=15, scores="percentBL") #VEH group, S+
@@ -316,9 +375,9 @@ plotPrePostLines(data=byBinDataEarlyAP5[[1]], color=colindx[2], pch=15, scores="
 #plotPrePostLines(data=byBinDataEarlyVEH[[2]], color=colindx[1], pch=22, scores="percentBL", jitter=0.015) #VEH group, S-. It's confusing so I'm not plotting it
 #plotPrePostLines(data=byBinDataEarlyAP5[[2]], color=colindx[2], pch=22, scores="percentBL", jitter=0.015) #AP5 group, S-
 
-axis(side=1, at=c(0, 1), labels=c("Preinfusion", "Postinfusion"), cex.axis=1, font=2)
+axis(side=1, at=c(0, 1), labels=c("Preinfusion", "Postinfusion"), cex.axis=1.4, font=2)
 axis(side=2, at=seq(0, 120, by=20), labels=seq(0, 120, 20), font=2, las=2, pos=-0.1)
-mtext(side=2, line=3, text="% of BL response ratio", font=2, cex.axis=1.5)
+mtext(side=2, line=4, text="% of BL response ratio", font=2, cex.axis=1.5)
 
 #legend("bottomright", legend = c("S+", "S-"), pch = c(15, 22), bty = "n" )
 legend("bottomleft", legend=c("VEH", "AP5"), lty=1, col=colindx, bty="n")
@@ -353,8 +412,8 @@ points(colMeans(matAP5), col=colindx[2], pch=15, cex=1.5)
 
 axis(side=1, at=seq(1, minBinNo, by=1), labels=seq(binsize/60, (minBinNo*binsize)/60, by=binsize/60), font=2)
 axis(side=2, at=seq(0, 1, by=0.2), font=2, las=2, pos=0.5)
-mtext(side=1, line=2.5, text = "Time (min)", font=2, cex=1.2)
-mtext(side=2, line=1, text="Proportion", font=2, cex=1.2)
+mtext(side=1, line=2.5, text = "Time (min)", font=2, cex=1.4)
+mtext(side=2, line=2, text="Proportion", font=2, cex=1.4)
 
 legend("bottomright", legend=c("VEH", "AP5"), lty=1, lwd=2, col=colindx, bty="n", cex=1.5)
 
@@ -391,8 +450,8 @@ points(colMeans(matAP5perc), col=colindx[2], pch=15, cex=1.5)
 
 axis(side=1, at=seq(1, minBinNo, by=1), labels=seq(binsize/60, (minBinNo*binsize)/60, by=binsize/60), font=2)
 axis(side=2, at=seq(0, 120, by=20), font=2, las=2, pos=0.5)
-mtext(side=1, line=2.5, text = "Time (min)", font=2, cex=1.2)
-mtext(side=2, line=1, text="% of baseline", font=2, cex=1.2)
+mtext(side=1, line=2.5, text = "Time (min)", font=2, cex=1.4)
+mtext(side=2, line=2, text="% of baseline", font=2, cex=1.4)
 
 legend("bottomright", legend=c("VEH", "AP5"), lty=1, lwd=2, col=colindx, bty="n", cex=1.5)
 
@@ -406,17 +465,17 @@ plotPrePostBars(data=byBinDataEarlyVEH[[1]], color=colindx[1], xmiddle=1, barwid
 plotPrePostBars(data=byBinDataEarlyAP5[[1]], color=colindx[2], xmiddle=2, barwidth=0.5, colLabel = "white", labelY = 0.05)
 
 #S- both groups pre and post infusion
-plotPrePostBars(data=byBinDataEarlyVEH[[2]], color=colindxC[1], xmiddle=3.25, barwidth=0.5, colLabel = "black", labelY = 0.05)
-plotPrePostBars(data=byBinDataEarlyAP5[[2]], color=colindxC[2], xmiddle=4.25, barwidth=0.5, colLabel = "black", labelY = 0.05)
+plotPrePostBars(data=byBinDataEarlyVEH[[2]], color=colindxB[1], xmiddle=3.25, barwidth=0.5, colLabel = "black", labelY = 0.05)
+plotPrePostBars(data=byBinDataEarlyAP5[[2]], color=colindxB[2], xmiddle=4.25, barwidth=0.5, colLabel = "black", labelY = 0.05)
 
 #Axis and labels
 axis(side=1, tick = F, at=c(1.5, 3.75), labels=c("S+", "S-"), cex.axis=1.4, font=2)
 axis(side=2, at=seq(0, 1, 0.2), cex.axis=1, font=2, las=2)
 mtext(side=2, line=2.5, text="Response ratio", cex=1.4, font=2)
 rect(xleft=3, xright=3.5, ybottom=0.95, ytop=1, col=colindx[1], border="white")
-rect(xleft=3.5, xright=4, ybottom=0.95, ytop=1, col=colindxC[1], border="white")
+rect(xleft=3.5, xright=4, ybottom=0.95, ytop=1, col=colindxB[1], border="white")
 rect(xleft=3, xright=3.5, ybottom=0.85, ytop=0.9, col=colindx[2], border="white")
-rect(xleft=3.5, xright=4, ybottom=0.85, ytop=0.9, col=colindxC[2], border="white")
+rect(xleft=3.5, xright=4, ybottom=0.85, ytop=0.9, col=colindxB[2], border="white")
 text(x=4.5, y=0.98, labels="VEH", cex=1.5)
 text(x=4.5, y=0.88, labels="AP5", cex=1.5)
 
@@ -437,10 +496,10 @@ plotPrePostLines(data=byBinDataEarlyAP5[[3]], color=colindx[2], pch=15, scores="
 plotPrePostLines(data=byBinDataEarlyVEH[[4]], color=colindx[1], pch=22, scores="absolute", jitter=0.015) #VEH group, S-
 plotPrePostLines(data=byBinDataEarlyAP5[[4]], color=colindx[2], pch=22, scores="absolute", jitter=0.015) #AP5 group, S-
 
-axis(side=1, at=c(0, 1), labels=c("Preinfusion", "Postinfusion"), cex.axis=1, font=2)
+axis(side=1, at=c(0, 1), labels=c("Preinfusion", "Postinfusion"), cex.axis=1.4, font=2)
 axis(side=2, at=seq(0, 10, by=2, labels=seq(0, 10, 2)), font=2, las=2, pos=-0.05)
 
-mtext(side=2, line=2.5, text="Latency (s)", cex=1.2)
+mtext(side=2, line=2.5, text="Latency (s)", cex=1.4, font=2)
 
 legend("bottomright", legend = c("S+", "S-"), pch = c(15, 22), bty = "n" )
 legend("bottomleft", legend=c("VEH", "AP5"), lty=1, col=colindx, bty="n")
@@ -456,12 +515,13 @@ plotPrePostLines(data=byBinDataEarlyAP5[[3]], color=colindx[2], pch=15, scores="
 #plotPrePostLines(data=byBinDataEarlyVEH[[2]], color=colindx[1], pch=22, scores="percentBL", jitter=0.015) #VEH group, S-. It's confusing so I'm not plotting it
 #plotPrePostLines(data=byBinDataEarlyAP5[[2]], color=colindx[2], pch=22, scores="percentBL", jitter=0.015) #AP5 group, S-
 
-axis(side=1, at=c(0, 1), labels=c("Preinfusion", "Postinfusion"), cex.axis=1, font=2)
+axis(side=1, at=c(0, 1), labels=c("Preinfusion", "Postinfusion"), cex.axis=1.4, font=2)
 axis(side=2, at=seq(0, 400, by=50), labels=seq(0, 400, 50), font=2, las=2, pos=-0.05)
-mtext(side=2, line=3, text="% of BL latency", font=2, cex.axis=1.5)
+mtext(side=2, line=3, text="% of BL latency", font=2, cex=1.4)
 
 #legend("bottomright", legend = c("S+", "S-"), pch = c(15, 22), bty = "n" )
 legend("bottomleft", legend=c("VEH", "AP5"), lty=1, col=colindx, bty="n", cex=1.5)
+
 
 ### 1.2.2. Cued latency: S+ and S- responding by bin on test day in AP5 vs. VEH
 
@@ -492,8 +552,8 @@ points(colMeans(matAP5), col=colindx[2], pch=15, cex=1.5)
 
 axis(side=1, at=seq(1, minBinNo, by=1), labels=seq(binsize/60, (minBinNo*binsize)/60, by=binsize/60), font=2)
 axis(side=2, at=seq(0, 10, by=2), font=2, las=2, pos=0.5)
-mtext(side=1, line=2.5, text = "Time (min)", font=2, cex=1.2)
-mtext(side=2, line=1, text="Latency (s)", font=2, cex=1.2)
+mtext(side=1, line=2.5, text = "Time (min)", font=2, cex=1.4)
+mtext(side=2, line=1, text="Latency (s)", font=2, cex=1.4)
 
 legend("topright", legend=c("VEH", "AP5"), lty=1, lwd=2, col=colindx, bty="n", cex=1.5)
 
@@ -542,17 +602,17 @@ plotPrePostBars(data=byBinDataEarlyVEH[[3]], color=colindx[1], xmiddle=1, barwid
 plotPrePostBars(data=byBinDataEarlyAP5[[3]], color=colindx[2], xmiddle=2, barwidth=0.5, colLabel = "white", labelY = 0.5)
 
 #S- both groups pre and post infusion
-plotPrePostBars(data=byBinDataEarlyVEH[[4]], color=colindxC[1], xmiddle=3.25, barwidth=0.5, colLabel = "black", labelY = 0.5)
-plotPrePostBars(data=byBinDataEarlyAP5[[4]], color=colindxC[2], xmiddle=4.25, barwidth=0.5, colLabel = "black", labelY = 0.5)
+plotPrePostBars(data=byBinDataEarlyVEH[[4]], color=colindxB[1], xmiddle=3.25, barwidth=0.5, colLabel = "black", labelY = 0.5)
+plotPrePostBars(data=byBinDataEarlyAP5[[4]], color=colindxB[2], xmiddle=4.25, barwidth=0.5, colLabel = "black", labelY = 0.5)
 
 #Axis and labels
 axis(side=1, tick = F, at=c(1.5, 3.75), labels=c("S+", "S-"), cex.axis=1.4, font=2)
 axis(side=2, at=seq(0, 10, 2), cex.axis=1, font=2, las=2)
 mtext(side=2, line=2.5, text="Latency (s)", cex=1.4, font=2)
 rect(xleft=0, xright=0.5, ybottom=9.5, ytop=10, col=colindx[1], border="white")
-rect(xleft=0.5, xright=1, ybottom=9.5, ytop=10, col=colindxC[1], border="white")
+rect(xleft=0.5, xright=1, ybottom=9.5, ytop=10, col=colindxB[1], border="white")
 rect(xleft=0, xright=0.5, ybottom=8.5, ytop=9, col=colindx[2], border="white")
-rect(xleft=0.5, xright=1, ybottom=8.5, ytop=9, col=colindxC[2], border="white")
+rect(xleft=0.5, xright=1, ybottom=8.5, ytop=9, col=colindxB[2], border="white")
 text(x=1.5, y=9.8, labels="VEH", cex=1.5)
 text(x=1.5, y=8.8, labels="AP5", cex=1.5)
 
@@ -569,10 +629,10 @@ plot.window(xlim=c(0, 1), ylim=c(0, 10))
 plotPrePostLines(data=byBinDataEarlyVEH[[7]], color=colindx[1], pch=15, scores="absolute") #VEH group, S+
 plotPrePostLines(data=byBinDataEarlyAP5[[7]], color=colindx[2], pch=15, scores="absolute") #AP5 group, S+
 
-axis(side=1, at=c(0, 1), labels=c("Preinfusion", "Postinfusion"), cex.axis=1, font=2)
+axis(side=1, at=c(0, 1), labels=c("Preinfusion", "Postinfusion"), cex.axis=1.4, font=2)
 axis(side=2, at=seq(0, 10, by=2), font=2, las=2, pos=-0.05)
 
-mtext(side=2, line=2.5, text="ITI latency (s)", cex=1.2)
+mtext(side=2, line=2.5, text="ITI latency (s)", cex=1.4, font = 2)
 
 legend("bottomright", legend = c("S+", "S-"), pch = c(15, 22), bty = "n" )
 legend("bottomleft", legend=c("VEH", "AP5"), lty=1, col=colindx, bty="n")
@@ -698,9 +758,9 @@ plotPrePostLines(data=byBinDataEarlyAP5[[5]], color=colindx[2], pch=15, scores="
 plotPrePostLines(data=byBinDataEarlyVEH[[6]], color=colindx[1], pch=22, scores="absolute", jitter=0.015) #VEH group, S-
 plotPrePostLines(data=byBinDataEarlyAP5[[6]], color=colindx[2], pch=22, scores="absolute", jitter=0.015) #AP5 group, S-
 
-axis(side=1, at=c(0, 1), labels=c("Preinfusion", "Postinfusion"), cex.axis=1, font=2)
+axis(side=1, at=c(0, 1), labels=c("Preinfusion", "Postinfusion"), cex.axis=1.4, font=2)
 axis(side=2, at=seq(-2, 6, by=1), font=2, las=2, pos=-0.04)
-mtext(side=2, line=2, text="S+ Specificity (s)", font=2, cex=1.2)
+mtext(side=2, line=2, text="S+ Specificity (s)", font=2, cex=1.4)
 
 legend("topright", legend = c("S+", "S-"), pch = c(15, 22), bty = "n" )
 legend("topleft", legend=c("VEH", "AP5"), lty=1, col=colindx, bty="n")
@@ -715,9 +775,9 @@ plotPrePostLines(data=byBinDataEarlyAP5[[5]], color=colindx[2], pch=15, scores="
 #plotPrePostLines(data=byBinDataEarlyVEH[[2]], color=colindx[1], pch=22, scores="percentBL", jitter=0.015) #VEH group, S-. It's confusing so I'm not plotting it
 #plotPrePostLines(data=byBinDataEarlyAP5[[2]], color=colindx[2], pch=22, scores="percentBL", jitter=0.015) #AP5 group, S-
 
-axis(side=1, at=c(0, 1), labels=c("Preinfusion", "Postinfusion"), cex.axis=1, font=2)
+axis(side=1, at=c(0, 1), labels=c("Preinfusion", "Postinfusion"), cex.axis=1.4, font=2)
 axis(side=2, at=seq(0, 140, by=20), font=2, las=2, pos=-0.1)
-mtext(side=2, line=3.2, text="% of BL S+ specificity", font=2, cex.axis=1.5)
+mtext(side=2, line=4, text="% of BL S+ specificity", font=2, cex=1.4)
 
 #legend("bottomright", legend = c("S+", "S-"), pch = c(15, 22), bty = "n" )
 legend("bottomleft", legend=c("VEH", "AP5"), lty=1, col=colindx, bty="n", cex=1.2)
@@ -759,6 +819,44 @@ mtext(side=2, line=1, text="S+ specificity (s)", font=2, cex=1.2)
 legend("bottomright", legend=c("VEH", "AP5"), lty=1, lwd=2, col=colindx, bty="n", cex=1.5)
 
 
+
+## 1.4.2.1.B. s- Cued specificity. Absolute scores
+plot.new()
+plot.window(xlim=c(0, minBinNo), ylim=c(-2, 7))
+
+#Mark infusion period
+screenPerSec <- minBinNo/(12*binsize) #Length of one second in the X axis
+infusionStart <- 1800; infusionEnd <- 1800+12*60
+infusionStartScreen <- infusionStart*screenPerSec; infusionEndScreen <- infusionEnd*screenPerSec
+rect(xleft=infusionStartScreen, xright=infusionEndScreen, ybottom=-2, ytop=6, col="gray95", border="white")
+abline(h=0, lty=3)
+
+#lapply(seq(1, length(ratsEarlyVEH)), function(x) {lines(byBinDataEarlyVEH[[1]][[x]], col=colindx[1])})
+#lapply(seq(1, length(ratsEarlyAP5)), function(x) {lines(byBinDataEarlyAP5[[1]][[x]], col=colindx[2])})
+
+matVEH <- do.call("rbind", byBinDataEarlyVEH[[6]]) #Create matrix in which rows are different rats and columns are bins
+matAP5 <- do.call("rbind", byBinDataEarlyAP5[[6]])
+
+lines(colMeans(matVEH), col=colindx[1], lwd=2)
+errBars(x=seq(1, minBinNo), y=colMeans(matVEH), err=colSds(matVEH)/sqrt(nrow(matVEH)), color=colindx[1])
+points(colMeans(matVEH), col=colindx[1], pch=15, cex=1.5)
+
+
+lines(colMeans(matAP5), col=colindx[2], lwd=2)
+errBars(x=seq(1, minBinNo), y=colMeans(matAP5), err=colSds(matAP5)/sqrt(nrow(matAP5)), color=colindx[2])
+points(colMeans(matAP5), col=colindx[2], pch=15, cex=1.5)
+
+axis(side=1, at=seq(1, minBinNo, by=1), labels=seq(binsize/60, (minBinNo*binsize)/60, by=binsize/60), font=2)
+axis(side=2, at=seq(-2, 6, by=2), font=2, las=2, pos=0.5)
+mtext(side=1, line=2.5, text = "Time (min)", font=2, cex=1.2)
+mtext(side=2, line=1, text="S+ specificity (s)", font=2, cex=1.2)
+
+legend("bottomright", legend=c("VEH", "AP5"), lty=1, lwd=2, col=colindx, bty="n", cex=1.5)
+
+
+
+
+
 ## 1.4.2.2. Percentage of BL
 plot.new()
 plot.window(xlim=c(0, minBinNo), ylim=c(0, 150))
@@ -794,7 +892,7 @@ axis(side=2, at=seq(0, 140, by=20), font=2, las=2, pos=0.5)
 mtext(side=1, line=2.5, text = "Time (min)", font=2, cex=1.2)
 mtext(side=2, line=1, text="% of baseline S+ specificity", font=2, cex=1.2)
 
-#legend("bottomleft", legend=c("VEH", "AP5"), lty=1, lwd=2, col=colindx, bty="n", cex=1.2)
+legend("bottomright", legend=c("VEH", "AP5"), lty=1, lwd=2, col=colindx, bty="n", cex=1.2)
 
 
 ### 1.4.3. Cued specificity: barplots of pre and post infusion, S+ vs S- and VEH vs AP5
@@ -806,17 +904,17 @@ plotPrePostBars(data=byBinDataEarlyVEH[[5]], color=colindx[1], xmiddle=1, barwid
 plotPrePostBars(data=byBinDataEarlyAP5[[5]], color=colindx[2], xmiddle=2, barwidth=0.5, colLabel = "white", labelY = 0.5)
 
 #S- both groups pre and post infusion
-plotPrePostBars(data=byBinDataEarlyVEH[[6]], color=colindxC[1], xmiddle=3.25, barwidth=0.5, colLabel = "black", labelY = 0.5)
-plotPrePostBars(data=byBinDataEarlyAP5[[6]], color=colindxC[2], xmiddle=4.25, barwidth=0.5, colLabel = "black", labelY = 0.5)
+plotPrePostBars(data=byBinDataEarlyVEH[[6]], color=colindxB[1], xmiddle=3.25, barwidth=0.5, colLabel = "black", labelY = 0.5)
+plotPrePostBars(data=byBinDataEarlyAP5[[6]], color=colindxB[2], xmiddle=4.25, barwidth=0.5, colLabel = "black", labelY = 0.5)
 
 #Axis and labels
 axis(side=1, tick = F, at=c(1.5, 3.75), labels=c("S+", "S-"), cex.axis=1.4, font=2)
 axis(side=2, at=seq(-2, 6, 2), cex.axis=1, font=2, las=2)
 mtext(side=2, line=2.5, text="Cued specificity", cex=1.4, font=2)
 rect(xleft=3, xright=3.5, ybottom=5.5, ytop=6, col=colindx[1], border="white")
-rect(xleft=3.5, xright=4, ybottom=5.5, ytop=6, col=colindxC[1], border="white")
+rect(xleft=3.5, xright=4, ybottom=5.5, ytop=6, col=colindxB[1], border="white")
 rect(xleft=3, xright=3.5, ybottom=4.5, ytop=5, col=colindx[2], border="white")
-rect(xleft=3.5, xright=4, ybottom=4.5, ytop=5, col=colindxC[2], border="white")
+rect(xleft=3.5, xright=4, ybottom=4.5, ytop=5, col=colindxB[2], border="white")
 text(x=4.5, y=5.8, labels="VEH", cex=1.5)
 text(x=4.5, y=4.8, labels="AP5", cex=1.5)
 
@@ -839,7 +937,7 @@ indexes <- unique(Early_LongFormat$Index)
 
 ## S+ Response ratio
 DSRR <- subset(x=Early_LongFormat, Early_LongFormat$Index==indexes[1])
-ezANOVA(data=DSRR, dv=Performance, within=Infusion, between=Drug, wid=Rat, type=3)
+vehap5prepost.test <- ezANOVA(data=DSRR, dv=Performance, within=Infusion, between=Drug, wid=Rat, type=3)
 
 #The interaction was significant. As post-hoc test, I'll split the dataset into the groups and, within each group, use a paired t-test for the pre vs. post
 DSRR_VEH <- subset(DSRR, Drug=="VEH")
@@ -847,7 +945,7 @@ DSRR_AP5 <- subset(DSRR, Drug=="AP5")
 
 vehtest <- t.test(x=DSRR_VEH$Performance[DSRR_VEH$Infusion=="Pre"], y=DSRR_VEH$Performance[DSRR_VEH$Infusion=="Post"], paired=T, alternative="greater") #t(5)= -0.44473, p=0.66244712
 ap5test <- t.test(x=DSRR_AP5$Performance[DSRR_AP5$Infusion=="Pre"], y=DSRR_AP5$Performance[DSRR_AP5$Infusion=="Post"], paired=T, alternative="greater") #t(4)=3.5043, p=0.02479956
-p.adjust(p=c(vehtest$p.value, ap5test$p.value), method="holm")
+p.adjust(p=c(vehap5prepost.test$ANOVA$p, vehtest$p.value, ap5test$p.value), method="holm")
 
 
 ## S- Response ratio
@@ -861,7 +959,7 @@ ezANOVA(data=NSRR, dv=Performance, within=Infusion, between=Drug, wid=Rat, type=
 
 ## S+ latency
 DSlat <- subset(x=Early_LongFormat, Early_LongFormat$Index==indexes[3])
-ezANOVA(data=DSlat, dv=Performance, within=Infusion, between=Drug, wid=Rat, type=3)
+vehAP5.PrePost.test.Lat <- ezANOVA(data=DSlat, dv=Performance, within=Infusion, between=Drug, wid=Rat, type=3)
 
 #The interaction was significant. As post-hoc test, I'll split the dataset into the groups and, within each group, use a paired t-test for the pre vs. post
 DSlat_VEH <- subset(DSlat, Drug=="VEH")
@@ -869,7 +967,7 @@ DSlat_AP5 <- subset(DSlat, Drug=="AP5")
 
 vehtest <- t.test(x=DSlat_VEH$Performance[DSlat_VEH$Infusion=="Pre"], y=DSlat_VEH$Performance[DSlat_VEH$Infusion=="Post"], paired=T, alternative="less") #t(5)= 0.70908, p=0.74502111
 ap5test <- t.test(x=DSlat_AP5$Performance[DSlat_AP5$Infusion=="Pre"], y=DSlat_AP5$Performance[DSlat_AP5$Infusion=="Post"], paired=T, alternative="less") #t(4)=-3.0849, p=0.03675593
-p.adjust(p=c(vehtest$p.value, ap5test$p.value), method="holm")
+p.adjust(p=c(vehAP5.PrePost.test.Lat$ANOVA$p, vehtest$p.value, ap5test$p.value), method="holm")
 
 # $ANOVA
 # Effect DFn DFd        F              p p<.05       ges
@@ -892,12 +990,12 @@ ezANOVA(data=NSlat, dv=Performance, within=Infusion, between=Drug, wid=Rat, type
 
 ## ITI latency
 ITIlat <- subset(x=Early_LongFormat, Early_LongFormat$Index==indexes[7])
-ezANOVA(data=ITIlat, dv=Performance, within=Infusion, between=Drug, wid=Rat, type=3)
+ITIlat.aov_test <- ezANOVA(data=ITIlat, dv=Performance, within=Infusion, between=Drug, wid=Rat, type=3)
 # $ANOVA
 #          Effect DFn DFd        F          p p<.05       ges
-# 2          Drug   1   9 3.035051 0.11546222       0.1767650
-# 3      Infusion   1   9 8.783889 0.01586228     * 0.2617507
-# 4 Drug:Infusion   1   9 7.308655 0.02425617     * 0.2278047
+# 2          Drug   1   9 6.241261 0.03395910     * 0.3262542
+# 3      Infusion   1   9 5.825659 0.03901543     * 0.1633909
+# 4 Drug:Infusion   1   9 9.284387 0.01385936     * 0.2373706
 
 #The interaction was significant. As post-hoc test, I'll split the dataset into the groups and, within each group, use a paired t-test for the pre vs. post
 ITIlat_VEH <- subset(ITIlat, Drug=="VEH")
@@ -905,25 +1003,25 @@ ITIlat_AP5 <- subset(ITIlat, Drug=="AP5")
 
 vehtest <- t.test(x=ITIlat_VEH$Performance[ITIlat_VEH$Infusion=="Pre"], y=ITIlat_VEH$Performance[ITIlat_VEH$Infusion=="Post"], paired=T, alternative="less") #t(5)= -0.29979, p=0.38819996
 ap5test <- t.test(x=ITIlat_AP5$Performance[ITIlat_AP5$Infusion=="Pre"], y=ITIlat_AP5$Performance[ITIlat_AP5$Infusion=="Post"], paired=T, alternative="less") #t(4)=-2.9156, p=0.04343353
-p.adjust(p=c(vehtest$p.value, ap5test$p.value), method="holm")
+p.adjust(p=c(ITIlat.aov_test$ANOVA$p, vehtest$p.value, ap5test$p.value), method="holm")
 
 
 
 ## S+ specificity
 DSspec <- subset(x=Early_LongFormat, Early_LongFormat$Index==indexes[5])
-ezANOVA(data=DSspec, dv=Performance, within=Infusion, between=Drug, wid=Rat, type=3)
+spec.test <- ezANOVA(data=DSspec, dv=Performance, within=Infusion, between=Drug, wid=Rat, type=3)
 # $ANOVA
-# Effect DFn DFd         F           p p<.05       ges
-# 2          Drug   1   9 18.932488 0.001847158     * 0.5086447
-# 3      Infusion   1   9  2.982076 0.118264717       0.1440469
-# 4 Drug:Infusion   1   9  5.288396 0.047026214     * 0.2298460
+#          Effect DFn DFd         F          p p<.05       ges
+# 2          Drug   1   9 12.857249 0.00587814     * 0.3688511
+# 3      Infusion   1   9  4.437363 0.06443437       0.2256135
+# 4 Drug:Infusion   1   9  4.277391 0.06856527       0.2192633
 
 #The interaction was significant. As post-hoc test, I'll split the dataset into the groups and, within each group, use a paired t-test for the pre vs. post
 DSspec_VEH <- subset(DSspec, Drug=="VEH")
 DSspec_AP5 <- subset(DSspec, Drug=="AP5")
 
-vehtest <- t.test(x=DSspec_VEH$Performance[DSspec_VEH$Infusion=="Pre"], y=DSspec_VEH$Performance[DSspec_VEH$Infusion=="Post"], paired=T, alternative="greater") #t(5)= -1.0857, p=0.8364242
-ap5test <- t.test(x=DSspec_AP5$Performance[DSspec_AP5$Infusion=="Pre"], y=DSspec_AP5$Performance[DSspec_AP5$Infusion=="Post"], paired=T, alternative="greater") #t(4)=1.8999, p=0.1302552
+vehtest <- t.test(x=DSspec_VEH$Performance[DSspec_VEH$Infusion=="Pre"], y=DSspec_VEH$Performance[DSspec_VEH$Infusion=="Post"], paired=T, alternative="greater") #t = 0.061249, df = 5, p-value = 0.4768
+ap5test <- t.test(x=DSspec_AP5$Performance[DSspec_AP5$Infusion=="Pre"], y=DSspec_AP5$Performance[DSspec_AP5$Infusion=="Post"], paired=T, alternative="greater") #t = 2.0081, df = 4, p-value = 0.04752
 p.adjust(p=c(vehtest$p.value, ap5test$p.value), method="holm")
 
 
@@ -932,10 +1030,134 @@ NSspec <- subset(x=Early_LongFormat, Early_LongFormat$Index==indexes[6])
 ezANOVA(data=NSspec, dv=Performance, within=Infusion, between=Drug, wid=Rat, type=3)
 
 # $ANOVA
-# Effect DFn DFd          F         p p<.05         ges
-# 2          Drug   1   9 1.34470958 0.2760437       0.093057680
-# 3      Infusion   1   9 0.06228229 0.8085271       0.002163212
-# 4 Drug:Infusion   1   9 1.07763200 0.3263125       0.036153750
+#          Effect DFn DFd         F          p p<.05        ges
+# 2          Drug   1   9 3.6204787 0.08949286       0.18594300
+# 3      Infusion   1   9 0.3845323 0.55056370       0.01813095
+# 4 Drug:Infusion   1   9 0.5718089 0.46887081       0.02672518
+
+
+
+### PERFORMANCE INDEX BY BIN
+Early_LongFormatByBin$bin <- as.character(Early_LongFormatByBin$bin)
+
+bins <- unique(Early_LongFormatByBin$bin)
+newBinsIndex <- c(1, 1, 1, 0, 2, 2, 2, 3, 3, 3, 4, 4) #I want to create 30min bins instead of 10min bins because to compare so many bins reduces my p values a lot when adjusting
+
+newBinsVals <- sapply(seq(1, nrow(Early_LongFormatByBin)), function(l){
+        sel <- Early_LongFormatByBin$bin[l]
+        newBinsIndex[sel]
+})
+
+Early_LongFormatByBin$Bigbins <- newBinsVals
+
+smallbins.aov <- summary(aov(perf ~ drug * bins + Error(rat/bins), data=Early_LongFormatByBin))
+bigbins.aov <- summary(aov(perf ~ drug * Bigbins + Error(rat/(Bigbins)), data=Early_LongFormatByBin))
+
+### Results of the Mixed-effects (1 within, 1 btwn-subject factor) ANOVA with the original 10min bins
+# Error: rat
+#            Df Sum Sq Mean Sq F value  Pr(>F)   
+# drug       1  232.0  232.01   12.12 0.00692 **
+
+#         Residuals  9  172.3   19.14                   
+# ---
+#         Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+# 
+# Error: rat:bin
+#           Df Sum Sq Mean Sq F value Pr(>F)
+# bin       11  48.71   4.429   1.433  0.170
+# drug:bin  11  54.56   4.960   1.605  0.109
+# Residuals 99 306.02   3.091 
+
+
+
+#I repeated the analysis using big bins:
+# Error: rat
+#           Df Sum Sq Mean Sq F value  Pr(>F)   
+# drug       1  232.0  232.01   12.12 0.00692 **
+#         Residuals  9  172.3   19.14                   
+# ---
+#         Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+# 
+# Error: rat:Bigbins
+#              Df Sum Sq Mean Sq F value Pr(>F)  
+# Bigbins       1   9.40    9.40   1.511 0.2502  
+# drug:Bigbins  1  31.79   31.79   5.111 0.0501 .
+# Residuals     9  55.98    6.22                 
+# ---
+#         Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+# 
+# Error: Within
+#            Df Sum Sq Mean Sq F value Pr(>F)
+# Residuals 110  312.1   2.837 
+
+
+ttestPerBin <- do.call("rbind", lapply(seq(1, length(unique(Early_LongFormatByBin$bin))), function(m){
+       bindex <- unique(Early_LongFormatByBin$bin)[m]
+        tst <- t.test(x=EarlyVEH_DStaskAccByBin_LongFormat$perf[EarlyVEH_DStaskAccByBin_LongFormat$bin==bindex], 
+                      y=EarlyAP5_DStaskAccByBin_LongFormat$perf[EarlyAP5_DStaskAccByBin_LongFormat$bin==bindex], paired=F, alternative="greater") 
+        
+        data.frame(bin=bindex, t=tst$statistic, df=tst$parameter, p=tst$p.value)
+})
+)
+
+#Adjust the t test p values and also the p values of the ANOVA (using the small bins)
+padjusted <- p.adjust(p=c(0.00692, 0.17, 0.109, ttestPerBin$p), method="holm")
+
+
+ttestPerBin$p.adjusted <- padjusted[-c(1:3)]
+
+# bin           t       df               p p.adjusted
+# t     1  1.83145811 5.304251 0.061588185 0.23241359
+# t1    2 -0.09012978 8.012100 0.534801740 0.69922324
+# t2    3  0.40517671 6.078269 0.349611621 0.69922324
+# t3    4  2.12717518 6.890756 0.035793356 0.18215673
+# t4    5  2.92773629 7.727084 0.009899460 0.09899460
+# t5    6  2.65123274 8.242288 0.014228686 0.11500863
+# t6    7  3.59036615 8.723828 0.003069769 0.03683723
+# t7    8  2.79555498 4.178221 0.023336776 0.16335743
+# t8    9  1.83100539 6.076459 0.058103398 0.23241359
+# t9   10  2.82825212 6.977097 0.012778737 0.11500863
+# t10  11  3.00188759 8.884798 0.007562351 0.08318586
+# t11  12  2.21600537 7.294561 0.030359454 0.18215673
+
+newBinsVals <- sapply(seq(1, nrow(EarlyVEH_DStaskAccByBin_LongFormat)), function(l){
+        sel <- EarlyVEH_DStaskAccByBin_LongFormat$bin[l]
+        newBinsIndex[sel]
+})
+
+EarlyVEH_DStaskAccByBin_LongFormat$Bigbins <- newBinsVals
+
+newBinsVals <- sapply(seq(1, nrow(EarlyAP5_DStaskAccByBin_LongFormat)), function(l){
+        sel <- EarlyAP5_DStaskAccByBin_LongFormat$bin[l]
+        newBinsIndex[sel]
+})
+
+EarlyAP5_DStaskAccByBin_LongFormat$Bigbins <- newBinsVals
+
+
+ttestPerBigBin <- do.call("rbind", lapply(seq(1, length(unique(Early_LongFormatByBin$Bigbins))), function(m){
+        bindex <- unique(Early_LongFormatByBin$Bigbins)[m]
+        tst <- t.test(x=EarlyVEH_DStaskAccByBin_LongFormat$perf[EarlyVEH_DStaskAccByBin_LongFormat$Bigbins==bindex], 
+                      y=EarlyAP5_DStaskAccByBin_LongFormat$perf[EarlyAP5_DStaskAccByBin_LongFormat$Bigbins==bindex], paired=F, alternative="greater") 
+        
+        data.frame(Bigbins=bindex, t=tst$statistic, df=tst$parameter, p=tst$p.value)
+})
+)
+
+#Adjust the t test p values and also the p values of the ANOVA (using the big bins)
+padjusted <- p.adjust(p=c(0.00692, 0.17, 0.109, ttestPerBigBin$p), method="holm")
+
+
+ttestPerBigBin$p.adjusted <- p.adjust(p=ttestPerBigBin$p, method="holm")
+
+#    Bigbins         t        df              p    p.adjusted
+# t        1 0.8568663 23.645328 0.200060020152 0.34000000000 #1-30 min. I'll use this as the PRE window
+# t1       0 2.1271752  6.890756 0.035793355919 0.14317342368 #31-40 min. I discard this because it's the time at which the infusion is taking place
+# t2       2 5.4051789 28.468158 0.000004356194 0.00003484955 #41-70 min. I'll use this as the POST window
+# t3       3 4.4557853 21.256654 0.000106486237 0.00074540366 #71-100 min
+# t4       4 3.7628519 18.653759 0.000676119814 0.00405671888 #101-120 min
+
+
 
 
 
@@ -954,15 +1176,15 @@ ezANOVA(data=NSspec, dv=Performance, within=Infusion, between=Drug, wid=Rat, typ
 
 # S+ Onset
 psthInf(formatDat="Zscores", group="VEH", event="S+", comp=c("Pre VEH injection", "Post VEH injection"), expName = "Early", errShade=T, ymax=14, graphFolder=neuGraphFolder, col=c("black", colindx[1]), infTime=1800, infDur=12*60, 
-        xmin=0.5, xmax=1.5, binw=50, neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf), stimulus="cue", imgFormat="pdf")       
+        xmin=0.5, xmax=1.5, binw=50, neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf), stimulus="cue", imgFormat="pdf", BLNeuData=0)       
 psthInf(formatDat="raw", group="VEH", event="S+", comp=c("Pre VEH injection", "Post VEH injection"), expName = "Early", errShade=T, ymax=26, graphFolder=neuGraphFolder, col=c("black", colindx[1]), infTime=1800, infDur=12*60, 
-        xmin=0.5, xmax=1.5, binw=50, neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf), stimulus="cue", imgFormat="pdf")       
+        xmin=0.5, xmax=1.5, binw=50, neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf), stimulus="cue", imgFormat="pdf", BLNeuData=0)       
 
 #S- Onset
 psthInf(formatDat="Zscores", group="VEH", event="S-", comp=c("Pre VEH injection", "Post VEH injection"), expName = "Early", errShade=T, ymax=14, graphFolder=neuGraphFolder, col=c("black", colindx[1]), infTime=1800, infDur=12*60, 
-        xmin=0.5, xmax=1.5, binw=50, neudata=list(allNeuronsNSEarlyVEHPreInf, allNeuronsNSEarlyVEHPostInf), stimulus="cue", imgFormat="pdf")       
+        xmin=0.5, xmax=1.5, binw=50, neudata=list(allNeuronsNSEarlyVEHPreInf, allNeuronsNSEarlyVEHPostInf), stimulus="cue", imgFormat="pdf", BLNeuData=0)       
 psthInf(formatDat="raw", group="VEH", event="S-", comp=c("Pre VEH injection", "Post VEH injection"), expName = "Early", errShade=T, ymax=26, graphFolder=neuGraphFolder, col=c("black", colindx[1]), infTime=1800, infDur=12*60, 
-        xmin=0.5, xmax=1.5, binw=50, neudata=list(allNeuronsNSEarlyVEHPreInf, allNeuronsNSEarlyVEHPostInf), stimulus="cue", imgFormat="pdf")       
+        xmin=0.5, xmax=1.5, binw=50, neudata=list(allNeuronsNSEarlyVEHPreInf, allNeuronsNSEarlyVEHPostInf), stimulus="cue", imgFormat="pdf", BLNeuData=0)       
 
 
 #S+ Entry
@@ -990,15 +1212,15 @@ psthInf(formatDat="raw", group="VEH", event="ITI Entry", comp=c("Pre VEH injecti
 
 #S+ Onset
 psthInf(formatDat="Zscores", group="AP5", event="S+", comp=c("Pre AP5 injection", "Post AP5 injection"), expName = "Early", errShade=T, ymax=14, graphFolder=neuGraphFolder, col=c("black", colindx[2]), infTime=1800, infDur=12*60, 
-        xmin=0.5, xmax=1.5, binw=50, neudata=list(allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf), stimulus="cue", imgFormat="pdf")       
+        xmin=0.5, xmax=1.5, binw=50, neudata=list(allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf), stimulus="cue", imgFormat="pdf", BLNeuData=0)       
 psthInf(formatDat="raw", group="AP5", event="S+", comp=c("Pre AP5 injection", "Post AP5 injection"), expName = "Early", errShade=T, ymax=26, graphFolder=neuGraphFolder, col=c("black", colindx[2]), infTime=1800, infDur=12*60, 
-        xmin=0.5, xmax=1.5, binw=50, neudata=list(allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf), stimulus="cue", imgFormat="pdf")       
+        xmin=0.5, xmax=1.5, binw=50, neudata=list(allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf), stimulus="cue", imgFormat="pdf", BLNeuData=0)       
 
 #S- Onset
 psthInf(formatDat="Zscores", group="AP5", event="S-", comp=c("Pre AP5 injection", "Post AP5 injection"), expName = "Early", errShade=T, ymax=14, graphFolder=neuGraphFolder, col=c("black", colindx[2]), infTime=1800, infDur=12*60, 
-        xmin=0.5, xmax=1.5, binw=50, neudata=list(allNeuronsNSEarlyAP5PreInf, allNeuronsNSEarlyAP5PostInf), stimulus="cue", imgFormat="pdf")       
+        xmin=0.5, xmax=1.5, binw=50, neudata=list(allNeuronsNSEarlyAP5PreInf, allNeuronsNSEarlyAP5PostInf), stimulus="cue", imgFormat="pdf", BLNeuData=0)       
 psthInf(formatDat="raw", group="AP5", event="S-", comp=c("Pre AP5 injection", "Post AP5 injection"), expName = "Early", errShade=T, ymax=26, graphFolder=neuGraphFolder, col=c("black", colindx[2]), infTime=1800, infDur=12*60, 
-        xmin=0.5, xmax=1.5, binw=50, neudata=list(allNeuronsNSEarlyAP5PreInf, allNeuronsNSEarlyAP5PostInf), stimulus="cue", imgFormat="pdf")       
+        xmin=0.5, xmax=1.5, binw=50, neudata=list(allNeuronsNSEarlyAP5PreInf, allNeuronsNSEarlyAP5PostInf), stimulus="cue", imgFormat="pdf", BLNeuData=0)       
 
 
 #S+ Entry
@@ -1029,36 +1251,237 @@ psthInf(formatDat="raw", group="AP5", event="ITI Entry", comp=c("Pre AP5 injecti
 ###############################################################
 
 dotplot(neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf, allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf),
-        expName="Early", dot="Medians", lines=T, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=300)
+        expName="Early", dot="Medians", Lines=T, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=400)
 dotplot(neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf, allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf),
-        expName="Early", dot="Means", lines=T, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=300)
+        expName="Early", dot="Means", Lines=T, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=400)
 dotplot(neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf, allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf),
-        expName="Early", dot="Medians", lines=F, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=300)
+        expName="Early", dot="Medians", Lines=F, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=400)
 dotplot(neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf, allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf),
-        expName="Early", dot="Means", lines=F, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=300)
+        expName="Early", dot="Means", Lines=F, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=400)
 
-dotplot(neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf),
-        expName="Early", dot="Medians", Lines=F, ybottom=0, ytop=10, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=300)
+#Same but with boxplot instead of dotplot
+dotplot(boxplot=T, neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf, allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf),
+        expName="Early 100-400", Lines=T, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=400, ytop=12)
+dotplot(boxplot=T, neudata=list(allNeuronsNSEarlyVEHPreInf, allNeuronsNSEarlyVEHPostInf, allNeuronsNSEarlyAP5PreInf, allNeuronsNSEarlyAP5PostInf),
+        expName="Early 100-400", Lines=T, ytop=12, ybottom=-2, col=colindx, plotWidth=0.3, event="S-", winmin=100, winmax=400)
+dotplot(boxplot=T, neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf, allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf),
+        expName="Early 100-400", Lines=F, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=400, ytop=9)
+dotplot(boxplot=T, neudata=list(allNeuronsNSEarlyVEHPreInf, allNeuronsNSEarlyVEHPostInf, allNeuronsNSEarlyAP5PreInf, allNeuronsNSEarlyAP5PostInf),
+        expName="Early 100-400", Lines=F, ytop=9, ybottom=-2, col=colindx, plotWidth=0.3, event="S-", winmin=100, winmax=400)
 
-#I can't get my dotplot function to work, so just run enough lines to get dotPlotByGroup
-plot.new()
-plot.window(xlim=c(1, 2), ylim=c(-1, 6))
-points(x=c(1.3, 1.7), y=c(median(dotPlotByGroup[[1]]$Pre), median(dotPlotByGroup[[1]]$Post)), pch=19, cex=2.5, col=colindx[2])
-#points(x=c(1, 2), y=c(mean(dotPlotByGroup[[1]]$Pre), mean(dotPlotByGroup[[1]]$Post)), pch=19, cex=2.5, col=colindx[1])
-errBars(x=c(1.3, 1.7), y=c(median(dotPlotByGroup[[1]]$Pre), median(dotPlotByGroup[[1]]$Post)), 
-        err=c(iqr(dotPlotByGroup[[1]]$Pre), iqr(dotPlotByGroup[[1]]$Post)), color=colindx[2], jitter=0.005)
-axis(side=1, at=c(1.3, 1.7), labels=c("Preinj.", "Postinj."), cex.axis=1.4, font=2)
-axis(side=2, at=seq(-1, 6, 1), las=2, cex.axis=1.4, font=2)
-mtext(side=2, line=2.5, text="Firing rate (Z sc.)", cex=1.5, font=2)
+#Raw
+dotplot(boxplot=T, neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf, allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf),
+        expName="Early 100-400", Lines=T, formatDat="Raw", ytop=20, ybottom=0, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=400, comp=c("VEH", "AP5"))
+dotplot(boxplot=T, neudata=list(allNeuronsNSEarlyVEHPreInf, allNeuronsNSEarlyVEHPostInf, allNeuronsNSEarlyAP5PreInf, allNeuronsNSEarlyAP5PostInf),
+        expName="Early 100-400", Lines=T, formatDat="Raw", ytop=20, ybottom=0, col=colindx, plotWidth=0.3, event="S-", winmin=100, winmax=400, comp=c("VEH", "AP5"))
+dotplot(boxplot=T, neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf, allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf),
+        expName="Early 100-400", Lines=F, formatDat="Raw", ytop=20, ybottom=0, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=400, comp=c("VEH", "AP5"))
+dotplot(boxplot=T, neudata=list(allNeuronsNSEarlyVEHPreInf, allNeuronsNSEarlyVEHPostInf, allNeuronsNSEarlyAP5PreInf, allNeuronsNSEarlyAP5PostInf),
+        expName="Early 100-400", Lines=F, formatDat="Raw", ytop=20, ybottom=0, col=colindx, plotWidth=0.3, event="S-", winmin=100, winmax=400, comp=c("VEH", "AP5"))
 
 
 ### STATISTICAL TEST
-#Comparison of cue-evoked firing rate (100ms-300ms window) pre vs post injection for both groups. I'll use a Wilcoxon paired test separately for each group
+#Comparison of cue-evoked firing rate (100ms-400ms window) pre vs post injection for both groups. I'll use a Wilcoxon paired test separately for each group
 #To get the dotplotDataVEH or dotplotDataAP5 objects, I need to run the code inside the dotplot function separately. I should fix this to make it easier.
 #Z scores with 2s BL
-wilcox.test(x=dotplotDataVEH[,1], y=dotplotDataVEH[,2]) #W = 28, p=0.7209; pcorrected=0.98620 (Holm and with the 2 other "Late" wilcoxon tests into account)
-wilcox.test(x=dotplotDataAP5[,1], y=dotplotDataAP5[,2]) #W = 635, p=0.00577; pcorrected=0.02308 (Holm and with the 2 other late wilcoxon tests into account)
+load(file=paste(dataForRdir, "dotPlotByGroup.rdat", sep=""))
+dotPlotByGroupEarly <- dotPlotByGroup
+dotplotDataVEH_Early <- dotPlotByGroupEarly$VEH
+dotplotDataAP5_Early <- dotPlotByGroupEarly$AP5
+
+wilcox.test(x=dotplotDataVEH_Early[,1], y=dotplotDataVEH_Early[,2], paired=T) #V = 22, p=0.6406; pcorrected=1 (Holm and with the 2 other "Late" wilcoxon tests into account); #Raw scores: V=24, p=0.4609
+wilcox.test(x=dotplotDataAP5_Early[,1], y=dotplotDataAP5_Early[,2], paired=T) #V = 424, p=1.824e-05; pcorrected= 7.296e-05 (Holm and with the 2 other late wilcoxon tests into account); Raw scores: V=80, p=0.0011
+
 
 #Correct p values taking into account the other 2 wilcoxon tests from the "Late" test
-p.adjust(p=c(0.7209, 0.00577, 0.4931, 0.09956), method="holm")
-#0.98620 0.02308 0.98620 0.29868
+p.adjust(p=c(0.64, 1.824e-05, 0.000862, 0.01344), method="holm")
+#6.400e-01 7.296e-05 2.340e-03, 2.688e-01
+
+
+#Raw scores
+p.adjust(p=c(0.46, 0.0011, 0.045, 0.03), method="holm")
+# [1] 0.4600 0.0044 0.0900 0.0900
+
+
+###############################################################
+#3. SCATTERPLOT pre and post infusion around time of cue
+###############################################################
+
+prePostInf_FR(data=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf), 
+             dataformat="Raw", BLwdw=2, winmin=100, winmax=400, col_labels="purple",
+             comparison="Early VEH Pre vs. Post", graphfolder=preVsPostFRFolder, 
+             xmin=0, ymin=0)
+        
+prePostInf_FR(data=list(allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf), 
+              dataformat="Raw", BLwdw=2, winmin=100, winmax=400, col_labels="purple",
+              comparison="Early AP5 Pre vs. Post", graphfolder=preVsPostFRFolder)
+
+
+#Baseline
+prePostInf_FR(data=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf), 
+              dataformat="Raw", BLwdw=2, winmin=-2000, winmax=0,
+              comparison="Baseline_Early VEH Pre vs. Post", graphfolder=preVsPostFRFolder)
+
+prePostInf_FR(data=list(allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf), 
+              dataformat="Raw", BLwdw=2, winmin=-2000, winmax=0,
+              comparison="Baseline_Early AP5 Pre vs. Post", graphfolder=preVsPostFRFolder)
+
+
+
+###############################################
+### PROPORTION OF CUE EXCITED NEURONS
+###############################################
+
+#Early VEH
+plot.new()
+par(mar=c(2, 6, 2, 2))
+plot.window(xlim=c(0, 2), ylim=c(0, 1))
+rect(xleft=0, xright=1, ybottom=0, ytop=sum(EarlyVEHPreInf_ExcUnits)/length(EarlyVEHPreInf_ExcUnits), col="gray30", border = F)
+rect(xleft=1, xright=2, ybottom=0, ytop=sum(EarlyVEHPostInf_ExcUnits)/length(EarlyVEHPostInf_ExcUnits), col=colindx[1], border= F)
+axis(side=1, at=c(0.5, 1.5), tick = F, labels=c("Pre", "Post"), cex.axis=1.5, font=2)
+axis(side=2, at=seq(0, 1, 0.25), cex.axis=1.4, las=2)
+mtext(side=2, line=4, text="Proportion", cex=1.5, font=2)
+
+
+#Early AP5
+plot.new()
+par(mar=c(2, 6, 2, 2))
+plot.window(xlim=c(0, 2), ylim=c(0, 1))
+rect(xleft=0, xright=1, ybottom=0, ytop=sum(EarlyAP5PreInf_ExcUnits)/length(EarlyAP5PreInf_ExcUnits), col="gray30", border = F)
+rect(xleft=1, xright=2, ybottom=0, ytop=sum(EarlyAP5PostInf_ExcUnits)/length(EarlyAP5PostInf_ExcUnits), col=colindx[2], border= F)
+axis(side=1, at=c(0.5, 1.5), tick = F, labels=c("Pre", "Post"), cex.axis=1.5, font=2)
+axis(side=2, at=seq(0, 1, 0.25), cex.axis=1.4, las=2)
+mtext(side=2, line=4, text="Proportion", cex=1.5, font=2)
+
+
+
+
+################################################
+### EXCITATION AND INHIBITION BY BIN
+################################################
+postInfTargetWdw <- 1800+12*60+30*60 #For the post infusion window, I'll choose the period between the end of the infusion +30'.
+
+#Matrix in which rows are 50ms bins after the cue, columns are individual neurons and the values indicate if the neuron was EXCITED (ExcBins) or INHIBITED (InhBins) on that bin
+NEXfiles <- "E:/Dropbox/NMDA/EXP1_Performance/Early VEH/NEX files/"
+EarlyVEHPreInf_ExcBins <- KC.sigbins(path=NEXfiles, startt=0, endt=1800, event=1, BLwdw=2, PostEvent_wdw=1, pbin=0.05, funcdirect=funcdirect)
+EarlyVEHPostInf_ExcBins <- KC.sigbins(path=NEXfiles, startt=2520, endt=postInfTargetWdw, event=1, BLwdw=2, PostEvent_wdw=1, pbin=0.05, funcdirect=funcdirect)
+EarlyVEHPreInf_InhBins <- KC.inhib.sigbins(path=NEXfiles, startt=0, endt=1800, event=1, BLwdw=2, PostEvent_wdw=1, pbin=0.05, funcdirect=funcdirect)
+EarlyVEHPostInf_InhBins <- KC.inhib.sigbins(path=NEXfiles, startt=2520, endt=postInfTargetWdw, event=1, BLwdw=2, PostEvent_wdw=1, pbin=0.05, funcdirect=funcdirect)
+
+# In neuralhist, I flagged neurons as CUE-EXCITED if they were excited (>99.9% confidence interval of a Poisson distribution given by BL firing) for 3 consecutive 10ms bins in the 500ms window after the cue. I used the 2s precue window as baseline to define my Poisson distribution.
+EarlyVEH_ExcUnits <- unlist(allNeuronsDSEarlyVEHPreInf$cueexidx) #Index of cue-excited units
+
+#Redefine NEXfiles now so that it sends the function to the AP5 files and repeat
+NEXfiles <- "E:/Dropbox/NMDA/EXP1_Performance/Early AP5/NEX files/"
+EarlyAP5PreInf_ExcBins <- KC.sigbins(path=NEXfiles, startt=0, endt=1800, event=1, BLwdw=2, PostEvent_wdw=1, pbin=0.05, funcdirect=funcdirect)
+EarlyAP5PostInf_ExcBins <- KC.sigbins(path=NEXfiles, startt=2520, endt=postInfTargetWdw, event=1, BLwdw=2, PostEvent_wdw=1, pbin=0.05, funcdirect=funcdirect)
+EarlyAP5PreInf_InhBins <- KC.inhib.sigbins(path=NEXfiles, startt=0, endt=1800, event=1, BLwdw=2, PostEvent_wdw=1, pbin=0.05, funcdirect=funcdirect)
+EarlyAP5PostInf_InhBins <- KC.inhib.sigbins(path=NEXfiles, startt=2520, endt=postInfTargetWdw, event=1, BLwdw=2, PostEvent_wdw=1, pbin=0.05, funcdirect=funcdirect)
+
+# In neuralhist, I flagged neurons as CUE-EXCITED if they were excited (>99.9% confidence interval of a Poisson distribution given by BL firing) for 3 consecutive 10ms bins in the 500ms window after the cue. I used the 2s precue window as baseline to define my Poisson distribution.
+EarlyAP5_ExcUnits <- unlist(allNeuronsDSEarlyAP5PreInf$cueexidx) #Index of cue-excited units
+
+
+#Save these files
+save(EarlyVEHPreInf_ExcBins, file=paste(dataForRdir, "EarlyVEHPreInf_ExcBins.rdat", sep=""))
+save(EarlyVEHPostInf_ExcBins, file=paste(dataForRdir, "EarlyVEHPostInf_ExcBins.rdat", sep=""))
+save(EarlyVEHPreInf_InhBins, file=paste(dataForRdir, "EarlyVEHPreInf_InhBins.rdat", sep=""))
+save(EarlyVEHPostInf_InhBins, file=paste(dataForRdir, "EarlyVEHPostInf_InhBins.rdat", sep=""))
+
+save(EarlyAP5PreInf_ExcBins, file=paste(dataForRdir, "EarlyAP5PreInf_ExcBins.rdat", sep=""))
+save(EarlyAP5PostInf_ExcBins, file=paste(dataForRdir, "EarlyAP5PostInf_ExcBins.rdat", sep=""))
+save(EarlyAP5PreInf_InhBins, file=paste(dataForRdir, "EarlyAP5PreInf_InhBins.rdat", sep=""))
+save(EarlyAP5PostInf_InhBins, file=paste(dataForRdir, "EarlyAP5PostInf_InhBins.rdat", sep=""))
+
+
+#Plot % bins excited/inhibited before and after infusion of VEH or AP5
+
+#Function to calculate the percentage of units exc/inh to apply on the objects that I created with KC.sigbins.R and KC.inhib.sigbins.R
+PercBins <- function(sigBinData){
+        sapply(seq(1, nrow(sigBinData)), function (x){
+                sum(sigBinData[x,])/ncol(sigBinData)
+        })
+}
+
+
+#Early VEH
+plot.new()
+plot.window(xlim = c(0, nrow(EarlyVEHPreInf_ExcBins)), ylim=c(0, 1))
+abline(h=seq(-1, 1, by=0.25), col="gray90")
+
+lines(x=seq(1, nrow(EarlyVEHPreInf_ExcBins)), y=PercBins(EarlyVEHPreInf_ExcBins), col="gray30", lwd=2)
+lines(x=seq(1, nrow(EarlyVEHPostInf_ExcBins)), y=PercBins(EarlyVEHPostInf_ExcBins), col="blue", lwd=2)
+
+lines(x=seq(1, nrow(EarlyVEHPreInf_InhBins)), y=-PercBins(EarlyVEHPreInf_InhBins), col="gray30", lwd=2)
+lines(x=seq(1, nrow(EarlyVEHPostInf_InhBins)), y=-PercBins(EarlyVEHPostInf_InhBins), col="blue", lwd=2)
+
+axis(side=1, at=seq(0, nrow(EarlyVEHPreInf_ExcBins), by=10), labels=seq(0, 1, by=0.5), cex.axis=1.4)
+axis(side=2, las=2, at=seq(0, 1, by=0.5), labels=seq(0, 100, 50), cex.axis=1.4)
+axis(side=2, las=2, at=seq(0, -1, by=-0.5), labels=seq(0, 100, 50), cex.axis=1.4)
+mtext(side=1, text="Time from S+ onset (s)", font=2, cex=1.5, line=2.5)
+mtext(side=2, text="% Excited", at=0.5, font=2, cex = 1.5, line=2.5)
+mtext(side=2, text="% Inhibited", at=-0.5, font=2, cex = 1.5, line=2.5)
+
+
+
+#Early AP5
+plot.new()
+plot.window(xlim = c(0, nrow(EarlyAP5PreInf_ExcBins)), ylim=c(0, 1))
+abline(h=seq(-1, 1, by=0.25), col="gray90")
+
+lines(x=seq(1, nrow(EarlyAP5PreInf_ExcBins)), y=PercBins(EarlyAP5PreInf_ExcBins), col="gray30", lwd=2)
+lines(x=seq(1, nrow(EarlyAP5PostInf_ExcBins)), y=PercBins(EarlyAP5PostInf_ExcBins), col="red", lwd=2)
+
+lines(x=seq(1, nrow(EarlyAP5PreInf_InhBins)), y=-PercBins(EarlyAP5PreInf_InhBins), col="gray30", lwd=2)
+lines(x=seq(1, nrow(EarlyAP5PostInf_InhBins)), y=-PercBins(EarlyAP5PostInf_InhBins), col="red", lwd=2)
+
+axis(side=1, at=seq(0, nrow(EarlyVEHPreInf_ExcBins), by=10), labels=seq(0, 1, by=0.5), cex.axis=1.4)
+axis(side=2, las=2, at=seq(0, 1, by=0.5), labels=seq(0, 100, 50), cex.axis=1.4)
+axis(side=2, las=2, at=seq(0, -1, by=-0.5), labels=seq(0, 100, 50), cex.axis=1.4)
+mtext(side=1, text="Time from S+ onset (s)", font=2, cex=1.5, line=2.5)
+mtext(side=2, text="% Excited", at=0.5, font=2, cex = 1.5, line=2.5)
+mtext(side=2, text="% Inhibited", at=-0.5, font=2, cex = 1.5, line=2.5)
+
+
+########
+#Dot plot (or boxplot) that says: of the cue-excited neurons, during what % of bins were those units excited before and after injection 
+EarlyVEHPre_cueExcOnly_ExcPerBin <- EarlyVEHPreInf_ExcBins[,EarlyVEH_ExcUnits]
+EarlyVEHPost_cueExcOnly_ExcPerBin <- EarlyVEHPostInf_ExcBins[,EarlyVEH_ExcUnits]
+
+EarlyVEHPre_ExcDotPlot <- colSums(EarlyVEHPre_cueExcOnly_ExcPerBin)/nrow(EarlyVEHPre_cueExcOnly_ExcPerBin)
+EarlyVEHPost_ExcDotPlot <- colSums(EarlyVEHPost_cueExcOnly_ExcPerBin)/nrow(EarlyVEHPost_cueExcOnly_ExcPerBin)
+
+
+EarlyAP5Pre_cueExcOnly_ExcPerBin <- EarlyAP5PreInf_ExcBins[,EarlyAP5_ExcUnits]
+EarlyAP5Post_cueExcOnly_ExcPerBin <- EarlyAP5PostInf_ExcBins[,EarlyAP5_ExcUnits]
+
+EarlyAP5Pre_ExcDotPlot <- colSums(EarlyAP5Pre_cueExcOnly_ExcPerBin)/nrow(EarlyAP5Pre_cueExcOnly_ExcPerBin)
+EarlyAP5Post_ExcDotPlot <- colSums(EarlyAP5Post_cueExcOnly_ExcPerBin)/nrow(EarlyAP5Post_cueExcOnly_ExcPerBin)
+
+
+#Make dotplot
+makeBoxPlot <- function(data, xmin, xmax, color){
+        rect(xleft=xmin, xright=xmax, ybottom=summary(data)[2], ytop=summary(data)[5], border=color, lwd=2) #IQR
+        segments(x0=xmin, x1=xmax, y0=summary(data)[3], col=color, lwd=2) #Median
+        segments(x0=xmin, x1=xmax, y0=summary(data)[4], col="black", lwd=2) #Mean
+}
+
+plot.new()
+plot.window(xlim=c(0, 2), ylim=c(0, 0.5))
+
+makeBoxPlot(data=EarlyVEHPre_ExcDotPlot, xmin=0, xmax=0.3, color=colindx[1])
+makeBoxPlot(data=EarlyVEHPost_ExcDotPlot, xmin=0.4, xmax=0.7, color=colindx[1])
+
+makeBoxPlot(data=EarlyAP5Pre_ExcDotPlot, xmin=1, xmax=1.3, color=colindx[2])
+makeBoxPlot(data=EarlyAP5Post_ExcDotPlot, xmin=1.4, xmax=1.7, color=colindx[2])
+
+
+axis(side=1, at=c(0.15, 0.55), labels =c("Pre", "Post"), cex.axis=1.5, font=2)
+axis(side=1, at=c(1.15, 1.55), labels =c("Pre", "Post"), cex.axis=1.5, font=2)
+axis(side=2, las=2, cex.axis=1.4)
+mtext(side=2, line=3, text="% excited bins", cex=1.5, font=2)
+
+wilcox.test(EarlyVEHPre_ExcDotPlot, EarlyVEHPost_ExcDotPlot, paired=T) #V = 3, p-value = 0.3711
+wilcox.test(EarlyAP5Pre_ExcDotPlot, EarlyAP5Post_ExcDotPlot, paired=T) #V = 166, p-value = 0.0004841
+
+

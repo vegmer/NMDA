@@ -3,7 +3,7 @@
 plotFRandCPhistogram <- function(experiment="Exp 3", events=c("S+", "S-"), masterDF=list(masterDF_DS, masterDF_NS), 
                                  graphFolder=MixedGraphFolder, trialBinSize=15, dataProcess="Zscores", 
                                  correctOnly=FALSE, color="black", capped=T, capValue = c(-60, 60), 
-                                 yAxMinZ = -1, yAxMaxZ = 5, yAxMaxRaw = 10, psthmin=-1, psthmax=1, 
+                                 yAxMinZ = -1, yAxMaxZ = 3, yAxMaxRaw = 10, psthmin=0.5, psthmax=2, 
                                  imgFormat="pdf", neudata=allNeuronsDS, cueExcOnly=FALSE){
         
         # Install and call necessary packages
@@ -112,6 +112,7 @@ plotFRandCPhistogram <- function(experiment="Exp 3", events=c("S+", "S-"), maste
                         text(labelLeg, x=length(subFRcolNames)+1, y=(nDivisions*3*yAxMax)+1.5*yAxMax, srt=90, cex=0.8)  
                         
                         atY <- (0.5:(nDivisions+0.5))*3*yAxMax
+                        if(length(trialBins)==1){trialBins <- c(trialBins, trialBinSize)}
                         axis(side=2, at=atY, labels = trialBins, las=2, cex=1.4)
                         
                         mtext(side=2, line=2.5, text="Trial from CP", font=2, cex=1.5)

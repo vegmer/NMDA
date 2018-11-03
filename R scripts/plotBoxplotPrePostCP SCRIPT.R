@@ -49,7 +49,7 @@ plotBoxplotPrePostCP <- function(experiment="Exp 4", masterDF=list(masterDF_DS_V
         plot.new()
         
         # This function has 2 functions: 
-        # a) Calculate and spit the mean FR per bin around the time of the event for each session (w respect to change point) for each group of units (VEH vs AP5)
+        # a) Calculate and spit out the mean FR per bin around the time of the event for each session (w respect to change point) for each group of units (VEH vs AP5)
         # b) Plot that info
         
         FRbyUnitBoth <- lapply(seq(1, length(masterDF)), function(c){
@@ -135,9 +135,9 @@ plotBoxplotPrePostCP <- function(experiment="Exp 4", masterDF=list(masterDF_DS_V
                                         #IQR rectangle
                                         rect(xleft=i+leftRect, xright=i+rightRect, ybottom=Q1, ytop = Q3, col = color[c], border="white")
                                         
-                                        #Mean (white) and Median (black) line
-                                        segments(x0=i+leftRect, x1=i+rightRect, y0=mean(MeanByUnit), y1=mean(MeanByUnit), lwd=2, col = "white")
-                                        segments(x0=i+leftRect, x1=i+rightRect, y0=Median, y1=Median, lwd=2)
+                                        #Mean (BLACK) and Median (WHITE) line
+                                        segments(x0=i+leftRect, x1=i+rightRect, y0=mean(MeanByUnit), y1=mean(MeanByUnit), lwd=2, col = "black")
+                                        segments(x0=i+leftRect, x1=i+rightRect, y0=Median, y1=Median, lwd=2, col="white")
                                         
                                         #Number of Units
                                         halfBar <- (compBarBreaks[c+1]-compBarBreaks[c])/2
