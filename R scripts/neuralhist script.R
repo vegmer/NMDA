@@ -122,10 +122,12 @@ neuralhist <- function(funcdirect=funcdirect, path, startt=0, endt, binw, psthmi
                         hcounts = hist(allvals[which(allvals >= -BLwdw & allvals <= .5)], breaks = seq(-BLwdw, .5, pbin), plot = F)$counts 
                         
                         freq = (hcounts/pbin)/length(masterlist[[x]][[y]])  #just for comparison's sake, to see how counts compare to actual frequency
-                        baseline = mean(freq[1:(BLwdw/pbin)])   
+                        baseline = mean(freq[1:(BLwdw/pbin)]) 
+                        
+                        baselinecounts=hcounts[1:(BLwdw/pbin)]
                         
                         critwin = hcounts[(BLwdw/pbin + 1):((BLwdw+.5)/pbin)]         #this is the window (500 ms) in which we look for excitation
-                        critval = poisson.test(x = sum(hcounts), T = length(hcounts), conf.level = 0.999)$conf.int[2]   #computes the upper limit of the confindence interval
+                        critval = poisson.test(x = sum(baselinecounts), T = length(baselinecounts), conf.level = 0.999)$conf.int[2]   #computes the upper limit of the confindence interval based on the baseline
                         
                         diffs = diff(which(critwin > critval))       #computes the differences in indices for bins exceeding the critical value (to check whether excited bins are consecutive or not)
                         cueex = F
@@ -157,10 +159,11 @@ neuralhist <- function(funcdirect=funcdirect, path, startt=0, endt, binw, psthmi
                         hcounts = hist(allvals[which(allvals >= -BLwdw & allvals <= .5)], breaks = seq(-BLwdw, .5, pbin), plot = F)$counts 
                         
                         freq = (hcounts/pbin)/length(masterlist[[x]][[y]])  #just for comparison's sake, to see how counts compare to actual frequency
-                        baseline = mean(freq[1:(BLwdw/pbin)])   
+                        baseline = mean(freq[1:(BLwdw/pbin)]) 
+                        baselinecounts=hcounts[1:(BLwdw/pbin)]
                         
                         critwin = hcounts[(BLwdw/pbin + 1):((BLwdw+.5)/pbin)]         #this is the window (500 ms) in which we look for excitation
-                        critval = poisson.test(x = sum(hcounts), T = length(hcounts), conf.level = 0.999)$conf.int[1]   #computes the upper limit of the confindence interval
+                        critval = poisson.test(x = sum(baselinecounts), T = length(baselinecounts), conf.level = 0.999)$conf.int[1]   #computes the upper limit of the confindence interval
                         
                         diffs = diff(which(critwin < critval))       #computes the differences in indices for bins lower than the critical value (to check whether excited bins are consecutive or not)
                         cueinh = F
