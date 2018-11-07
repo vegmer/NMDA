@@ -116,7 +116,7 @@ neuralhist <- function(funcdirect=funcdirect, path, startt=0, endt, binw, psthmi
                 lapply(seq(1, length(masterlist[[x]])), function(y) {
                         pbin = .05
                         threshold = 3
-                        BLwdw=2
+                        BLwdw=5
                         
                         allvals = unlist(masterlist[[x]][[y]])
                         hcounts = hist(allvals[which(allvals >= -BLwdw & allvals <= .5)], breaks = seq(-BLwdw, .5, pbin), plot = F)$counts 
@@ -153,7 +153,7 @@ neuralhist <- function(funcdirect=funcdirect, path, startt=0, endt, binw, psthmi
                 lapply(seq(1, length(masterlist[[x]])), function(y) {
                         pbin = .05
                         threshold = 2
-                        BLwdw=2
+                        BLwdw=5
                         
                         allvals = unlist(masterlist[[x]][[y]])
                         hcounts = hist(allvals[which(allvals >= -BLwdw & allvals <= .5)], breaks = seq(-BLwdw, .5, pbin), plot = F)$counts 
