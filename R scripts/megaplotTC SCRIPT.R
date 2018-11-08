@@ -1,4 +1,4 @@
-megaplotTC <- function(data=list(allNeuronsDS), graphmin=500, graphmax=10000, cuewinmin=100, cuewinmax=400,
+megaplotTC <- function(experiment, data=list(allNeuronsDS), graphmin=500, graphmax=10000, cuewinmin=100, cuewinmax=400,
                      colpalette="Rainbow", minFR=-2, maxFR=6, graphFolder=MixedGraphFolder, 
                      ZcolLabels=c("ZDS"), arrangeBy=c("ZDS")){
         
@@ -113,7 +113,7 @@ megaplotTC <- function(data=list(allNeuronsDS), graphmin=500, graphmax=10000, cu
         toplot2 <- toplotTC[order(toplotTC$BeforeCP, toplotTC[,colnames(toplotTC)==arrangeBy], na.last = F),]
         breaks <- seq(minFR, maxFR, 0.05)
         
-        filename=paste(graphFolder, "Megaplot timecourse", length(data), "events", winmax, "ms postcue.pdf", sep=" ")
+        filename=paste(graphFolder, experiment, "Megaplot timecourse", length(data), "events", winmax, "ms postcue.pdf", sep=" ")
         pdf(file = filename, width=9, height=9)
         
         plot.new()
@@ -159,8 +159,31 @@ megaplotTC <- function(data=list(allNeuronsDS), graphmin=500, graphmax=10000, cu
         })
         
         ### Plot behavior
-        ydivisions <- c(0, cumsum(rle(as.numeric(toplot2$BeforeCP))$lengths))
-        ylabels <- c("Before CP", "CP session", "After CP")
+        
+        #When I have rats that never learned, their value for "Before CP" is NA. So make sure these sessions are labeled differently. If no not learners, just make 3 divisions (pre CP, CP, post CP)
+        if(sum(is.na(toplot2$BeforeCP))==0){
+                ydivisions <- c(0, cumsum(rle(as.numeric(toplot2$BeforeCP))$lengths))
+                ylabels <- c("Before CP", "CP session", "After CP")
+                
+                mtext(side=4, line=-10, text="Before CP", cex=1.2, font=2, at=(ydivisions[2]-ydivisions[1])/2)
+                mtext(side=4, line=-10, text="CP session", cex=1.2, font=2, at=ydivisions[2]+(ydivisions[3]-ydivisions[2])/2)
+                mtext(side=4, line=-10, text="After CP", cex=1.2, font=2, at=ydivisions[3]+(ydivisions[4]-ydivisions[3])/2)
+                
+        }
+        
+        if(sum(is.na(toplot2$BeforeCP))>0){
+                ytable <- table(toplot2$BeforeCP, exclude = NULL) #NAs come out last but in my data frame are first, so switch order in next line
+                ydivisions <- c(0, as.numeric(cumsum(c(ytable[4], ytable[1:3]))))
+                ylabels <- c("Non learners", "Before CP", "CPsession", "After CP")
+                
+                mtext(side=4, line=-10, text="Non learners", cex=1.2, font=2, at=(ydivisions[2]-ydivisions[1])/2)
+                mtext(side=4, line=-10, text="Before CP", cex=1.2, font=2, at=ydivisions[2]+(ydivisions[3]-ydivisions[2])/2)
+                mtext(side=4, line=-10, text="CP session", cex=1.2, font=2, at=ydivisions[3]+(ydivisions[4]-ydivisions[3])/2)
+                mtext(side=4, line=-10, text="After CP", cex=1.2, font=2, at=ydivisions[4]+(ydivisions[5]-ydivisions[4])/2)
+                
+        }
+        
+        
         sapply(seq(1, length(ydivisions)), function(q){
                 segments(x0=box1left, x1=subboxWidth, y0=ydivisions[q]+1, y1=ydivisions[q]+1)
         })
@@ -170,10 +193,7 @@ megaplotTC <- function(data=list(allNeuronsDS), graphmin=500, graphmax=10000, cu
         mtext(side=1, at=length(graphMinBin:graphMaxBin)/2, line=2.5, text="Time from cue onset (s)", cex=1.5, font=2)
 
         
-        mtext(side=4, line=-10, text="Before CP", cex=1.2, font=2, at=(ydivisions[2]-ydivisions[1])/2)
-        mtext(side=4, line=-10, text="CP session", cex=1.2, font=2, at=ydivisions[2]+(ydivisions[3]-ydivisions[2])/2)
-        mtext(side=4, line=-10, text="After CP", cex=1.2, font=2, at=ydivisions[3]+(ydivisions[4]-ydivisions[3])/2)
-        
+       
         xlabels <- seq(-graphmin/1000, graphmax/1000, by=binw/100)
         xat <- seq(1, length(graphMinBin:graphMaxBin), length.out=length(xlabels))
         axis(side=1, at=xat, labels = xlabels)
@@ -220,7 +240,7 @@ megaplotTC <- function(data=list(allNeuronsDS), graphmin=500, graphmax=10000, cu
         legLabelsFixed <- c(paste("<= ", minFR, sep=""), legLabels[-c(1, length(legLabels))], paste(">= ", maxFR, sep=""))
         stepHt <- nrow(toplot2)/(length(legLabels)-1)
         
-        axis(side=4, line=-2, at=seq(1, nrow(toplot)+1, by=stepHt), labels=legLabelsFixed, las=2)
+        axis(side=4, line=-2, at=seq(1, nrow(toplot2)+1, by=stepHt), labels=legLabelsFixed, las=2)
         mtext(side=4, text="Firing rate (Z sc.)", font=2, cex=1.5)
         
         legend("bottomright", pch=22, pt.bg=c("white", "black"), legend=c("Cue inhibited", "Cue excited"))

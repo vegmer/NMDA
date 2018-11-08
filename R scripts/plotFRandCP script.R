@@ -4,7 +4,8 @@ plotFRandCP <- function(cue="S+", experiment, masterDF, graphFolder=MixedGraphFo
                         WdwStart=0, WdwEnd=400, dataProcess="Zscores", correctOnly=FALSE, 
                         colindx="black", legLabels=c("VEH side", "AP5 side"), yAxMinZ=-1, yAxMaxZ=1, yAxMaxRaw=7, 
                         capped=T, capValue=c(-105, 105), cueExcOnly=F, neudata=allNeuronsDS) {
-        
+       
+         
         # Install and call necessary packages
         if(!require(dplyr)){install.packages("dplyr")}
         library(dplyr)
@@ -63,6 +64,7 @@ plotFRandCP <- function(cue="S+", experiment, masterDF, graphFolder=MixedGraphFo
                                 }
                                 
                                 if(correctOnly==T){
+                                    
                                         dataSel <- filter(dataSel, !is.na(dataSel$CueResponse))
                                 }
                                 
