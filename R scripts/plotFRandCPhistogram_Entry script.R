@@ -1,6 +1,6 @@
 
 
-plotFRandCPhistogram_Entry <- function(experiment="Exp 3", masterDF=list(masterDF_DS, masterDF_NS), 
+plotFRandCPhistogram_Entry <- function(experiment="Exp 3", masterDF=list(masterDF_DS, masterDF_NS), cueExcOnly=FALSE,
                                        graphFolder=MixedGraphFolder, trialBinSize=15, dataProcess="Zscores", 
                                        correctOnly=FALSE, color="black", capped=T, capValue = c(-90, 90), 
                                        yAxMinZ = -1, yAxMaxZ = 5, yAxMaxRaw = 10, WdwStart=-2, WdwEnd=5, 

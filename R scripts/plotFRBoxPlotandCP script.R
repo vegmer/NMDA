@@ -56,103 +56,108 @@ plotFRBoxPlotandCP <- function(cue="S+", experiment, masterDF, graphFolder=Mixed
                                 
                                 #When examining the tail of the excitations, discard trials in which the animal entered the port in the window under scrutiny
                                 if(WdwEnd>500){
-                                        dataSel <- filter(dataSel, (CueLatency*1000)>=WdwEnd)
+                                        dataSel <- filter(dataSel, (CueLat*1000)>=WdwEnd)
                                 }
                                 
                                 if(correctOnly==T){
                                         dataSel <- filter(dataSel, !is.na(dataSel$CueResponse))
                                 }
                                 
-                                
-                                screenRange <- c(0, nDivisions+1)
-                                
-                                plot.window(xlim=screenRange, ylim=c(yAxMinZ, yAxMaxZ))
-                                
-                                BLaverage <- as.numeric(format(dataSel$BLavg, digits=2)) #Baseline info is in integer format. If I just say numeric, it'll remove the decimal point and do sth weird. So I have to recur to this roundabout way.
-                                BLsd <- as.numeric(format(dataSel$BLsd, digits=2))
-                                
-                                numericDF <- apply(dataSel[, FRcols], MARGIN=2, as.numeric) #Convert selected FR columns into numeric
-                                numericDFTargetWdw <- numericDF[, TargetStartBin:TargetEndBin]
-                                
-                                
-                                binUnits <- unique(dataSel$allUnitIdx)
-                                
-                                byBinbyUnit <- do.call("rbind", lapply(seq(1, length(binUnits)), function(u){
+                                #It's possible that after subsetting by all those criteria (cue excited, etc.), we're left with no rows. In that case, skip the rest of the codde
+                                if(nrow(dataSel)>0){
+                                        screenRange <- c(0, nDivisions+1)
                                         
-                                        unitSel <- dataSel$allUnitIdx==binUnits[u]
-                                        byUnitbyTrialFR <- numericDFTargetWdw[unitSel, ]
+                                        plot.window(xlim=screenRange, ylim=c(yAxMinZ, yAxMaxZ))
                                         
-                                        byUnitFR <-  mean(byUnitbyTrialFR)
+                                        BLaverage <- as.numeric(format(dataSel$BLavg, digits=2)) #Baseline info is in integer format. If I just say numeric, it'll remove the decimal point and do sth weird. So I have to recur to this roundabout way.
+                                        BLsd <- as.numeric(format(dataSel$BLsd, digits=2))
                                         
-                                        if(dataProcess=="Zscores"){
-                                                BLaverage <- BLaverage[unitSel][1]
-                                                BLsd <- BLsd[unitSel][1]
-                                                byUnitFR <- (byUnitFR-BLaverage)/BLsd  
+                                        numericDF <- apply(dataSel[, FRcols], MARGIN=2, as.numeric) #Convert selected FR columns into numeric
+                                        
+                                        if(nrow(numericDF)>1){numericDFTargetWdw <- numericDF[, TargetStartBin:TargetEndBin]} else {
+                                                numericDFTargetWdw <- numericDF[TargetStartBin:TargetEndBin]
                                         }
                                         
-                                        sessInfo <- dataSel[unitSel, c(2:8, 28)][1, ]
                                         
-                                        #Summary of performance index for the trials recorded on this unit on this session
-                                        perfData <- dataSel[unitSel, c(17, 16, 15, 19) ]
-                                        perfData$CueResponse <- !is.na(perfData$CueResponse)
+                                        binUnits <- unique(dataSel$allUnitIdx)
                                         
-                                        perfData$CueSpecif <- as.numeric(as.character(perfData$CueSpecif))
-                                        perfData$CueLat <- as.numeric(as.character(perfData$CueLat))
-                                        perfData$CueLat[which(perfData$CueLat==10)] <- NA
-                                        perfData$CueResponse <- as.logical(perfData$CueResponse)
-                                        perfData$ITIlatency <- as.numeric(as.character(perfData$ITIlatency))
+                                        byBinbyUnit <- do.call("rbind", lapply(seq(1, length(binUnits)), function(u){
+                                                
+                                                unitSel <- dataSel$allUnitIdx==binUnits[u]
+                                                byUnitbyTrialFR <- numericDFTargetWdw[unitSel, ]
+                                                
+                                                byUnitFR <-  mean(byUnitbyTrialFR)
+                                                
+                                                if(dataProcess=="Zscores"){
+                                                        BLaverage <- BLaverage[unitSel][1]
+                                                        BLsd <- BLsd[unitSel][1]
+                                                        byUnitFR <- (byUnitFR-BLaverage)/BLsd  
+                                                }
+                                                
+                                                sessInfo <- dataSel[unitSel, c(2:8, 28)][1, ]
+                                                
+                                                #Summary of performance index for the trials recorded on this unit on this session
+                                                perfData <- dataSel[unitSel, c(17, 16, 15, 19) ]
+                                                perfData$CueResponse <- !is.na(perfData$CueResponse)
+                                                
+                                                perfData$CueSpecif <- as.numeric(as.character(perfData$CueSpecif))
+                                                perfData$CueLat <- as.numeric(as.character(perfData$CueLat))
+                                                perfData$CueLat[which(perfData$CueLat==10)] <- NA
+                                                perfData$CueResponse <- as.logical(perfData$CueResponse)
+                                                perfData$ITIlatency <- as.numeric(as.character(perfData$ITIlatency))
+                                                
+                                                
+                                                perfSumm <- sapply(1:length(perfData), function(j){mean(perfData[, j], na.rm=T)})
+                                                names(perfSumm) <- colnames(perfData)
+                                                perfSumm <- as.list(perfSumm)
+                                                
+                                                return(data.frame(bin=trialBins[i], unitIdx=binUnits[u], sessInfo, perfSumm, byUnitFR, cue=cue[c]))
+                                                
+                                        })
+                                        )
+                                        
+                                        #Plot the actual values of FR in selected bins of trials with respect to CP
+                                        forBoxplot <- summary(byBinbyUnit$byUnitFR)
+                                        
+                                        Q1 <- forBoxplot[2]; Q3 <- forBoxplot[5]
+                                        MEDIAN <- forBoxplot[3]; AVG <- forBoxplot[4]
+                                        MIN <- forBoxplot[1]; MAX <- forBoxplot[6]
+                                        
+                                        if(length(masterDF)==1){xleft=-0.3; xright=0.3}
+                                        
+                                        if(length(masterDF) >1){
+                                                minBoxArea <- 0.3
+                                                maxBoxArea <- 0.3
+                                                SubBoxArea <- (maxBoxArea+minBoxArea)/length(masterDF)
+                                                xleftSeq <- seq(-minBoxArea, maxBoxArea-SubBoxArea, length.out = length(masterDF))
+                                                xrightSeq <- seq(-minBoxArea+SubBoxArea, maxBoxArea, length.out = length(masterDF))
+                                                
+                                                xleft=xleftSeq[c]
+                                                xright=xrightSeq[c]
+                                                
+                                                legend(x=length(trialBins)+0.5, y=yAxMaxZ-c/2, legend=legLabels[c], 
+                                                       fill=color[c], pch=19, border='white', bty = 'n')
+                                        }
+                                        
+                                        center <- i #Because I want my boxplots to be between the bin cuts (and plot.window said X goes from 0 to 6 and I have 6 bins)
+                                        
+                                        rect(xleft=center+xleft, xright=center+xright, ybottom=Q1, ytop=Q3, col=color[c], border = "white")
+                                        segments(x0=center+xleft, x1=center+xright, y0=MEDIAN, y1=MEDIAN, col="white", lwd=2)
+                                        segments(x0=center+xleft, x1=center+xright, y0=AVG, y1=AVG, col="black", lwd=2)
+                                        
+                                        if(points==TRUE){
+                                                segments(x0=center+xleft, x1=center+xright, y0=MAX, y1=MAX, col="black", lwd=1.5)
+                                                segments(x0=center+xleft, x1=center+xright, y0=MIN, y1=MIN, col="black", lwd=1.5)
+                                                
+                                                halfBox <- SubBoxArea/2
+                                                points(x=rep(center+xleft+halfBox, nrow(byBinbyUnit)), y=byBinbyUnit$byUnitFR, pch=19, cex=0.2, col="black")
+                                                
+                                        }
                                         
                                         
-                                        perfSumm <- sapply(1:length(perfData), function(j){mean(perfData[, j], na.rm=T)})
-                                        names(perfSumm) <- colnames(perfData)
-                                        perfSumm <- as.list(perfSumm)
                                         
-                                        return(data.frame(bin=trialBins[i], unitIdx=binUnits[u], sessInfo, perfSumm, byUnitFR, cue=cue[c]))
-                                        
-                                })
-                                )
-                                
-                                #Plot the actual values of FR in selected bins of trials with respect to CP
-                                forBoxplot <- summary(byBinbyUnit$byUnitFR)
-                                
-                                Q1 <- forBoxplot[2]; Q3 <- forBoxplot[5]
-                                MEDIAN <- forBoxplot[3]; AVG <- forBoxplot[4]
-                                MIN <- forBoxplot[1]; MAX <- forBoxplot[6]
-                                
-                                if(length(masterDF)==1){xleft=-0.3; xright=0.3}
-                                
-                                if(length(masterDF) >1){
-                                        minBoxArea <- 0.3
-                                        maxBoxArea <- 0.3
-                                        SubBoxArea <- (maxBoxArea+minBoxArea)/length(masterDF)
-                                        xleftSeq <- seq(-minBoxArea, maxBoxArea-SubBoxArea, length.out = length(masterDF))
-                                        xrightSeq <- seq(-minBoxArea+SubBoxArea, maxBoxArea, length.out = length(masterDF))
-                                        
-                                        xleft=xleftSeq[c]
-                                        xright=xrightSeq[c]
-                                        
-                                        legend(x=length(trialBins)+0.5, y=yAxMaxZ-c/2, legend=legLabels[c], 
-                                               fill=color[c], pch=19, border='white', bty = 'n')
+                                        byBinbyUnit
                                 }
-                                
-                                center <- i #Because I want my boxplots to be between the bin cuts (and plot.window said X goes from 0 to 6 and I have 6 bins)
-                                
-                                rect(xleft=center+xleft, xright=center+xright, ybottom=Q1, ytop=Q3, col=color[c], border = "white")
-                                segments(x0=center+xleft, x1=center+xright, y0=MEDIAN, y1=MEDIAN, col="white", lwd=2)
-                                #segments(x0=center+xleft, x1=center+xright, y0=AVG, y1=AVG, col="black", lwd=2)
-                                
-                                if(points==TRUE){
-                                        segments(x0=center+xleft, x1=center+xright, y0=MAX, y1=MAX, col="black", lwd=1.5)
-                                        segments(x0=center+xleft, x1=center+xright, y0=MIN, y1=MIN, col="black", lwd=1.5)
-                                        
-                                        halfBox <- SubBoxArea/2
-                                        points(x=rep(center+xleft+halfBox, nrow(byBinbyUnit)), y=byBinbyUnit$byUnitFR, pch=19, cex=0.2, col="black")
-                                        
-                                }
-                                
-                                
-                                
-                                byBinbyUnit
                                
                         }
                 })

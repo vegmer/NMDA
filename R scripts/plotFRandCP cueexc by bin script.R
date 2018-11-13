@@ -1,22 +1,36 @@
 ##### PLOT FIRING RATE POST CUE AS A FUNCTION OF DISTANCE FROM CHANGE POINT
+# The selection of cue-exc units by bin may need some work, it gives me errors sometimes
 
 plotFRandCP <- function(cue="S+", experiment, masterDF, graphFolder=MixedGraphFolder, trialBinSize=5, 
                         WdwStart=0, WdwEnd=400, dataProcess="Zscores", correctOnly=FALSE, 
                         colindx="black", legLabels=c("VEH side", "AP5 side"), yAxMinZ=-1, yAxMaxZ=1, yAxMaxRaw=7, 
                         capped=T, capValue=c(-105, 105), cueExcOnly=F, neudata=allNeuronsDS) {
-        
-        
+       
+         
         # Install and call necessary packages
         if(!require(dplyr)){install.packages("dplyr")}
         library(dplyr)
         
+        if(length(neudata)<=4){binw <- neudata[[1]]$parameters$binw} else {binw <- neudata$parameters$binw}
         
-        binw <- neudata$parameters$binw
         
         #IF I WANT TO PLOT MORE THAN ONE GROUP PER GRAPH, MAKE A LIST WITH THE DIFFERNT masterDF OF THE DIFFERENT GROUPS
         
         if(correctOnly==TRUE){trialSel="correctOnly"} else {trialSel="all trials"}
         if(cueExcOnly==TRUE){unitSel="CueExcOnly"} else {unitSel="all units"}
+        
+        
+        #Info about cue excitation by bin
+        #Figure out which masterDF and neudata I'm going to use for checking cue excitation (It has to be the one built around S+)
+        #It's a bit redundant to do it this way (using a separate function, but I already had it so I'll reuse it) instead of calculating it within the main function 
+        if(cueExcOnly==TRUE){
+                DFForCueExcCheck <- masterDF[c(cue=="S+")]; if(length(DFForCueExcCheck)>1){DFForCueExcCheck<- DFForCueExcCheck[1]}
+                neudataForCueExcCheck <- neudata[c(cue=="S+")]; if(length(neudataForCueExcCheck)>1){neudataForCueExcCheck <- neudataForCueExcCheck[1]}
+                
+                cueExcDataByBin <- cueExcByBin(masterDF=DFForCueExcCheck[[1]], neudata=neudataForCueExcCheck[[1]], 
+                                               capValue=capValue, trialBinSize = trialBinSize, WdwStart = 100, WdwEnd = 400,
+                                               BLforPoisson=5000)
+                }
         
         
         filename=paste(graphFolder, experiment, "FR by trial from CP", "bin size", trialBinSize, unitSel, WdwStart, WdwEnd, dataProcess, trialSel, ".pdf", sep="_")
@@ -51,11 +65,16 @@ plotFRandCP <- function(cue="S+", experiment, masterDF, graphFolder=MixedGraphFo
                 datperbin <- do.call("rbind", lapply(seq(1, nDivisions, by=1), function(i){
                         if(sum(correspBins==i, na.rm=T)>0){
                                 
-                                
+                         
                                 dataSel <- filter(masterDF[[c]], correspBins==i)
                                 
                                 if(cueExcOnly==T){
-                                        dataSel <- filter(dataSel, CueExcited==T)
+                                        
+                                        binSel <- cueExcDataByBin[cueExcDataByBin$correspBins==i, ]
+                                        cueExcIdx <- match(dataSel$allUnitIdx, binSel$allUnitIdx)
+                                        dataSel$cueExcBin <- binSel$DSexc[cueExcIdx]
+                                        
+                                        dataSel <- filter(dataSel, cueExcBin==T)
                                 }
                                 
                                 #When examining the tail of the excitations, discard trials in which the animal entered the port in the window under scrutiny
@@ -64,7 +83,7 @@ plotFRandCP <- function(cue="S+", experiment, masterDF, graphFolder=MixedGraphFo
                                 }
                                 
                                 if(correctOnly==T){
-                                        
+                                    
                                         dataSel <- filter(dataSel, !is.na(dataSel$CueResponse))
                                 }
                                 
@@ -79,10 +98,10 @@ plotFRandCP <- function(cue="S+", experiment, masterDF, graphFolder=MixedGraphFo
                                         if(sum(correspBins==i, na.rm=T)==1){
                                                 numericDFTargetWdw <- numericDF[TargetStartBin:TargetEndBin]
                                                 Zscores <- (mean(numericDFTargetWdw, na.rm=T)-BLaverage)/BLsd
-                                        }else {
+                                                }else {
                                                 numericDFTargetWdw <- numericDF[,TargetStartBin:TargetEndBin]
                                                 Zscores <- (rowMeans(numericDFTargetWdw, na.rm=T)-BLaverage)/BLsd
-                                        }
+                                                }
                                         
                                         FRtargetPeriod <- mean(Zscores, na.rm=T)
                                         sdtargetPeriod <- sd(Zscores, na.rm=T)/sqrt(length(Zscores))
@@ -90,7 +109,7 @@ plotFRandCP <- function(cue="S+", experiment, masterDF, graphFolder=MixedGraphFo
                                         #Plot the actual values of FR in selected bins of trials with respect to CP
                                         if(cue[c]=="S-"){pchsel=21}
                                         if(cue[c]=="S+"){pchsel=19}
-                                        
+                                
                                         errBars(x=i, y=FRtargetPeriod, err=sdtargetPeriod, hatLength = 0, jitter=0, vertical=T)
                                         points(x=i, y=FRtargetPeriod, col=colindx[c], pch=pchsel, cex=2, bg="white")
                                         
@@ -124,27 +143,36 @@ plotFRandCP <- function(cue="S+", experiment, masterDF, graphFolder=MixedGraphFo
                                 
                                 if(dataProcess=="PercCueExc"){
                                         
-                                        selUnits <- unique(dataSel$allUnitIdx)
+                                        DFForCueExcCheck <- masterDF[c(cue=="S+")]; if(length(DFForCueExcCheck)>1){DFForCueExcCheck<- DFForCueExcCheck[1]}
+                                        neudataForCueExcCheck <- neudata[c(cue=="S+")]; if(length(neudataForCueExcCheck)>1){neudataForCueExcCheck <- neudataForCueExcCheck[1]}
                                         
-                                        cueExcUnits <- as.logical(sapply(seq(1, length(selUnits)), function(m){
-                                                unitSession <- filter(masterDF[[c]], masterDF[[c]]$allUnitIdx==selUnits[m])
-                                                exc <- unitSession$CueExcited[1]
-                                                exc
-                                        }))
+                                        cueExcDataByBin <- cueExcByBin(masterDF=DFForCueExcCheck[[1]], neudata=neudataForCueExcCheck[[1]], 
+                                                                       capValue=capValue, trialBinSize = trialBinSize, WdwStart = 100, WdwEnd = 400,
+                                                                       BLforPoisson=5000, binw=binw)
+                                        # 
+                                        # selUnits <- unique(dataSel$allUnitIdx)
+                                        # 
+                                        # cueExcUnits <- as.logical(sapply(seq(1, length(selUnits)), function(m){
+                                        #         unitSession <- filter(masterDF[[c]], masterDF[[c]]$allUnitIdx==selUnits[m])
+                                        #         exc <- unitSession$CueExcited[1]
+                                        #         exc
+                                        # }))
+                                        # 
+                                        # cueInhUnits <- as.logical(sapply(seq(1, length(selUnits)), function(m){
+                                        #         unitSession <- filter(masterDF[[c]], masterDF[[c]]$allUnitIdx==selUnits[m])
+                                        #         inh <- unitSession$CueInhibited[1]
+                                        #         inh
+                                        # }))
+                                        # 
                                         
-                                        cueInhUnits <- as.logical(sapply(seq(1, length(selUnits)), function(m){
-                                                unitSession <- filter(masterDF[[c]], masterDF[[c]]$allUnitIdx==selUnits[m])
-                                                inh <- unitSession$CueInhibited[1]
-                                                inh
-                                        }))
+                                        excData <- table(cueExcDataByBin$correspBins, cueExcDataByBin$DSexc)
+                                        inhData <- table(cueExcDataByBin$correspBins, cueExcDataByBin$DSinh)
                                         
-                                        sumCueExc <- sum(cueExcUnits)
-                                        sumNotCueExc <- length(cueExcUnits)-sumCueExc
-                                        sumCueInh <- sum(cueInhUnits)
-                                        sumNotCueInh <- length(cueInhUnits)-sumCueInh
+                                        binExcData <- excData[i, ]
+                                        binInhData <- inhData[i, ]
                                         
-                                        PercCueExc <- (sumCueExc/length(cueExcUnits))*100
-                                        PercCueInh <- (sumCueInh/length(cueInhUnits))*100
+                                        PercCueExc <- (binExcData[2]/(binExcData[1]+binExcData[2]))*100
+                                        PercCueInh <- (binInhData[2]/(binInhData[1]+binInhData[2]))*100
                                         
                                         if(PercCueExc==0){exc_borderCol=colindx[c]} else {exc_borderCol="white"}
                                         if(PercCueInh==0){inh_borderCol=colindx[c]} else {inh_borderCol="white"}
@@ -157,9 +185,9 @@ plotFRandCP <- function(cue="S+", experiment, masterDF, graphFolder=MixedGraphFo
                                         
                                         #Inhibitions (bottom plot)
                                         rect(xleft = i-1, xright=i, ybottom=-PercCueInh, ytop=0, col=colindx[c], border=inh_borderCol, lwd=2)
-                                        
-                                        return(data.frame(bin=i, trialBins=trialBins[i], CueEx=sumCueExc, notCueExc=sumNotCueExc,
-                                                          CueInh=sumCueInh, notCueInh=sumNotCueInh))
+                                
+                                        return(data.frame(bin=i, trialBins=trialBins[i], CueEx=binExcData[2], notCueExc=binExcData[1],
+                                                   CueInh=binInhData[2], notCueInh=binInhData[1]))
                                         
                                 }
                                 
@@ -191,7 +219,7 @@ plotFRandCP <- function(cue="S+", experiment, masterDF, graphFolder=MixedGraphFo
                 if(dataProcess=="PercCueExc"){
                         mtext("% cue excited", side=2, at=40, cex=1.2, line=2.5)
                         mtext("% cue inhibited", side=2, at=-5, cex=1.2, line=2.5)
-                }
+                        }
                 mtext("Trial from behavioral change point", side=1, cex=1.2, line=2.5)
                 mtext(paste("Bin size=", trialBinSize, "trials", sep=" "), side=3, adj=0.05, line=-2, font=3)
                 
@@ -208,7 +236,7 @@ plotFRandCP <- function(cue="S+", experiment, masterDF, graphFolder=MixedGraphFo
         
         dev.off()
         
-        return(allDat)
+       return(allDat)
         
 }
 
@@ -219,3 +247,6 @@ save(plotFRandCP, file="E:/Dropbox/NMDA/EXP1_Performance/R Functions/plotFRandCP
 save(plotFRandCP, file="E:/Dropbox/NMDA/EXP3_NAc FR acquisition/R Functions/plotFRandCP.R")
 save(plotFRandCP, file="E:/Dropbox/NMDA/EXP4_Unilateral AP5/R Functions/plotFRandCP.R")
 save(plotFRandCP, file="E:/Dropbox/NMDA/R Functions/plotFRandCPs.R")
+
+
+        

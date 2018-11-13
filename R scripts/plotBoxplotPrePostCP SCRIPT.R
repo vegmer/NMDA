@@ -172,9 +172,11 @@ plotBoxplotPrePostCP <- function(experiment="Exp 4", masterDF=list(masterDF_DS_V
                                 
                                 return(MeanByUnit) 
                         }
+                        
+                        mtext(side=2, line=2.5, cex=1.5, font=2, text=paste("Firing rate", labelLeg, sep=" "))
+                        
                 })
                 
-                mtext(side=2, line=2.5, cex=1.5, font=2, text=paste("Firing rate", labelLeg, sep=" "))
                 
                 
                 return(meanFRWOI)
