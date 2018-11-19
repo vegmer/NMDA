@@ -113,6 +113,9 @@ megaplotTC <- function(experiment, data=list(allNeuronsDS), graphmin=500, graphm
         toplot2 <- toplotTC[order(toplotTC$BeforeCP, toplotTC[,colnames(toplotTC)==arrangeBy], na.last = F),]
         breaks <- seq(minFR, maxFR, 0.05)
         
+        toplot2 <- toplot2[!is.na(toplot2$ZDS), ]
+        
+        
         filename=paste(graphFolder, experiment, "Megaplot timecourse", length(data), "events", winmax, "ms postcue.pdf", sep=" ")
         pdf(file = filename, width=9, height=9)
         

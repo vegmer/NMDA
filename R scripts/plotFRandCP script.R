@@ -206,9 +206,10 @@ plotFRandCP <- function(cue="S+", experiment, masterDF, graphFolder=MixedGraphFo
         mtext(titleLabel, side=3, line=2.5, cex=1.2, font=2)
         mtext(subLabel, side=3, line=1, cex=1, font=3)
         
+        return(allDat)
+        
         dev.off()
         
-        return(allDat)
         
 }
 

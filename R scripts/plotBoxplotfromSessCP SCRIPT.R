@@ -114,8 +114,8 @@ plotBoxplotfromSessCP <- function(experiment="Exp 4", masterDF=list(masterDF_DS_
                                         rect(xleft=i+leftRect, xright=i+rightRect, ybottom=Q1, ytop = Q3, col = color[c], border="white")
                                         
                                         #Mean (white) and Median (black) line
-                                        segments(x0=i+leftRect, x1=i+rightRect, y0=mean(MeanByUnit), y1=mean(MeanByUnit), lwd=2, col = "white")
-                                        segments(x0=i+leftRect, x1=i+rightRect, y0=Median, y1=Median, lwd=2)
+                                        segments(x0=i+leftRect, x1=i+rightRect, y0=mean(MeanByUnit), y1=mean(MeanByUnit), lwd=2, col = "black")
+                                        segments(x0=i+leftRect, x1=i+rightRect, y0=Median, y1=Median, lwd=2, col="white")
                                         
                                         #Number of Units
                                         halfBar <- (compBarBreaks[c+1]-compBarBreaks[c])/2

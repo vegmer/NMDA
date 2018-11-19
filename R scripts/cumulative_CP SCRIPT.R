@@ -1,5 +1,5 @@
 cumulative_CP <- function(Exp="Exp3", CPdata=CPdata, numSess=6, byAnimal=TRUE, byNeuron=FALSE, 
-                          neudata=allNeuronsDS, graphFolder=MixedGraphFolder){
+                          nexdata=allNeuronsDS, graphFolder=MixedGraphFolder){
         
         
         if(byAnimal==TRUE){
@@ -12,23 +12,30 @@ cumulative_CP <- function(Exp="Exp3", CPdata=CPdata, numSess=6, byAnimal=TRUE, b
         
         if(byNeuron==TRUE){
                 
-                nexdata <- neudata$nexdata
-                
                 unitsPerSess <- do.call("rbind", lapply(seq(1, length(nexdata)), function(x){
                         ratname <- nexdata[[x]]$ratname
                         expt <- nexdata[[x]]$expt
                         nUnits <- sum(grepl("sig", names(nexdata[[x]])))
+                        
+                        #Some rats have a 0 before their number in nexdata but not in CPdata, fix that. Also the ones with 3 numbers, drop the first one
+                        if(ratname=="MV06"){ratname <- "MV6"}
+                        if(ratname=="MV05"){ratname <- "MV5"}
+                        if(ratname=="MV08"){ratname <- "MV8"}
+                        if(ratname=="MV86"){ratname <- "MV186"}
+                        if(ratname=="MV90"){ratname <- "MV190"}
+                        
+                        
                         CP <- CPdata[CPdata$rat==ratname, ]$CPsess
                         
                         data.frame(ratname, expt, CPsess=CP, nUnits)
                 })
                 )
                 
-                totalUnits <- sum(unitsPerSess[unitsPerSess$CPsess <= nSess, ]$nUnits)
+                totalUnits <- sum(unitsPerSess[unitsPerSess$CPsess <= nSess, ]$nUnits, na.rm=T)
                 
                 cumCP <- sapply(seq(1, numSess), function(x){
                         
-                        sum(unitsPerSess[unitsPerSess$CPsess <= x, ]$nUnits)/totalUnits
+                        sum(unitsPerSess[unitsPerSess$CPsess <= x, ]$nUnits, na.rm=T)/totalUnits
                         
                 })
                 

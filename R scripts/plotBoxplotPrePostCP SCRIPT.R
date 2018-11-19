@@ -275,12 +275,12 @@ plotBoxplotPrePostCP <- function(experiment="Exp 4", masterDF=list(masterDF_DS_V
                         
                         comp1 <- FRbyUnitBoth[[s]][[1]] ##Down pre (s=1) or Not Down pre (s=2) vs. Down post (s=1) or Not Down post (s=2)
                         comp2 <- FRbyUnitBoth[[s]][[2]]
+
+                         if(mean(comp1, na.rm = T) > mean(comp2, na.rm = T)){altpick="greater"}
+                         if(mean(comp1, na.rm = T) < mean(comp2, na.rm = T)){altpick="less"}
+                         if(mean(comp1, na.rm = T) == mean(comp2, na.rm = T)){altpick="two.sided"}
                         
-                        if(mean(comp1, na.rm = T) > mean(comp2, na.rm = T)){altpick="greater"}
-                        if(mean(comp1, na.rm = T) < mean(comp2, na.rm = T)){altpick="less"}
-                        if(mean(comp1, na.rm = T) == mean(comp2, na.rm = T)){altpick="two.sided"}
-                        
-                        TEST <- wilcox.test(comp1, comp2, paired=F, alt=altpick)
+                        TEST <- wilcox.test(comp1, comp2, paired=F, alt="altpick")
                         
                         compName <- paste(lab_matrix[s, 1], "vs.", lab_matrix[s, 2])
                         
