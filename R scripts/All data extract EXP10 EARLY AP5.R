@@ -953,13 +953,24 @@ indexes <- unique(Early_LongFormat$Index)
 ## S+ Response ratio
 DSRR <- subset(x=Early_LongFormat, Early_LongFormat$Index==indexes[1])
 vehap5prepost.test <- ezANOVA(data=DSRR, dv=Performance, within=Infusion, between=Drug, wid=Rat, type=3)
+# $`ANOVA`
+#          Effect DFn DFd        F            p p<.05       ges
+# 2          Drug   1   9 50.99187 5.419987e-05     * 0.6694572
+# 3      Infusion   1   9 14.72451 3.983238e-03     * 0.5124852
+# 4 Drug:Infusion   1   9 15.22492 3.608893e-03     * 0.5208306
 
-#The interaction was significant. As post-hoc test, I'll split the dataset into the groups and, within each group, use a paired t-test for the pre vs. post
+#The interaction was significant. As post-hoc test, I'll split the dataset into the groups and, within each group, 
+# use a paired t-test for the pre vs. post
 DSRR_VEH <- subset(DSRR, Drug=="VEH")
 DSRR_AP5 <- subset(DSRR, Drug=="AP5")
 
-vehtest <- t.test(x=DSRR_VEH$Performance[DSRR_VEH$Infusion=="Pre"], y=DSRR_VEH$Performance[DSRR_VEH$Infusion=="Post"], paired=T, alternative="greater") #t(5)= -0.44473, p=0.66244712
-ap5test <- t.test(x=DSRR_AP5$Performance[DSRR_AP5$Infusion=="Pre"], y=DSRR_AP5$Performance[DSRR_AP5$Infusion=="Post"], paired=T, alternative="greater") #t(4)=3.5043, p=0.02479956
+vehtest <- t.test(x=DSRR_VEH$Performance[DSRR_VEH$Infusion=="Pre"], 
+                  y=DSRR_VEH$Performance[DSRR_VEH$Infusion=="Post"], 
+                  paired=T, alternative="greater") #t(5)= -0.44473, p=0.66244712
+ap5test <- t.test(x=DSRR_AP5$Performance[DSRR_AP5$Infusion=="Pre"], 
+                  y=DSRR_AP5$Performance[DSRR_AP5$Infusion=="Post"], 
+                  paired=T, alternative="greater") #t(4)=3.5043, p=0.02479956
+
 p.adjust(p=c(vehtest$p.value, ap5test$p.value), method="holm") # 0.66244712 0.02479956
 
 
@@ -995,8 +1006,13 @@ vehAP5.PrePost.test.Lat <- ezANOVA(data=DSlat, dv=Performance, within=Infusion, 
 DSlat_VEH <- subset(DSlat, Drug=="VEH")
 DSlat_AP5 <- subset(DSlat, Drug=="AP5")
 
-vehtest <- t.test(x=DSlat_VEH$Performance[DSlat_VEH$Infusion=="Pre"], y=DSlat_VEH$Performance[DSlat_VEH$Infusion=="Post"], paired=T, alternative="less") #t(5)= 0.70908, p=0.74502111
-ap5test <- t.test(x=DSlat_AP5$Performance[DSlat_AP5$Infusion=="Pre"], y=DSlat_AP5$Performance[DSlat_AP5$Infusion=="Post"], paired=T, alternative="less") #t(4)=-3.0849, p=0.03675593
+vehtest <- t.test(x=DSlat_VEH$Performance[DSlat_VEH$Infusion=="Pre"], 
+                  y=DSlat_VEH$Performance[DSlat_VEH$Infusion=="Post"], 
+                  paired=T, alternative="less") #t(5)= 0.70908, p=0.74502111
+ap5test <- t.test(x=DSlat_AP5$Performance[DSlat_AP5$Infusion=="Pre"], 
+                  y=DSlat_AP5$Performance[DSlat_AP5$Infusion=="Post"], 
+                  paired=T, alternative="less") #t(4)=-3.0849, p=0.03675593
+
 p.adjust(p=c(vehtest$p.value, ap5test$p.value), method="holm") #0.74502111 0.03675593
 
 # $ANOVA
@@ -1044,8 +1060,13 @@ ITIlat.aov_test <- ezANOVA(data=ITIlat, dv=Performance, within=Infusion, between
 ITIlat_VEH <- subset(ITIlat, Drug=="VEH")
 ITIlat_AP5 <- subset(ITIlat, Drug=="AP5")
 
-vehtest <- t.test(x=ITIlat_VEH$Performance[ITIlat_VEH$Infusion=="Pre"], y=ITIlat_VEH$Performance[ITIlat_VEH$Infusion=="Post"], paired=T, alternative="less") #t(5)= -0.29979, p=0.38819996
-ap5test <- t.test(x=ITIlat_AP5$Performance[ITIlat_AP5$Infusion=="Pre"], y=ITIlat_AP5$Performance[ITIlat_AP5$Infusion=="Post"], paired=T, alternative="less") #t(4)=-2.9156, p=0.04343353
+vehtest <- t.test(x=ITIlat_VEH$Performance[ITIlat_VEH$Infusion=="Pre"], 
+                  y=ITIlat_VEH$Performance[ITIlat_VEH$Infusion=="Post"], 
+                  paired=T, alternative="less") #t(5)= -0.29979, p=0.38819996
+ap5test <- t.test(x=ITIlat_AP5$Performance[ITIlat_AP5$Infusion=="Pre"], 
+                  y=ITIlat_AP5$Performance[ITIlat_AP5$Infusion=="Post"], 
+                  paired=T, alternative="less") #t(4)=-2.9156, p=0.04343353
+
 p.adjust(p=c(vehtest$p.value, ap5test$p.value), method="holm") #0.73076380 0.04378754
 
 
@@ -1142,7 +1163,7 @@ ezANOVA(data=Early_LongFormatByBin_DSandNS, dv=perf, within=c(index, Bigbins), b
 
 
 
-#I repeated the analysis using big bins:
+### Results of the Mixed-effects (1 within, 1 btwn-subject factor) ANOVA with the BIG BINS (30 min)
 # Error: rat
 #           Df Sum Sq Mean Sq F value  Pr(>F)   
 # drug       1  232.0  232.01   12.12 0.00692 **
@@ -1367,83 +1388,115 @@ dotplot(neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf, al
 #Same but with boxplot instead of dotplot
 
 #100-400ms
-dotplot(boxplot=T, neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf, allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf),
+dotPlotByGroupDS <- dotplot(boxplot=T, neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf, allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf),
         expName="Early 100-400", Lines=T, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=400, ytop=12)
-dotplot(boxplot=T, neudata=list(allNeuronsNSEarlyVEHPreInf, allNeuronsNSEarlyVEHPostInf, allNeuronsNSEarlyAP5PreInf, allNeuronsNSEarlyAP5PostInf),
-        expName="Early 100-400", Lines=T, ytop=12, ybottom=-2, col=colindx, plotWidth=0.3, event="S-", winmin=100, winmax=400)
-dotplot(boxplot=T, neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf, allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf),
-        expName="Early 100-400", Lines=F, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=400, ytop=9)
-dotplot(boxplot=T, neudata=list(allNeuronsNSEarlyVEHPreInf, allNeuronsNSEarlyVEHPostInf, allNeuronsNSEarlyAP5PreInf, allNeuronsNSEarlyAP5PostInf),
-        expName="Early 100-400", Lines=F, ytop=9, ybottom=-2, col=colindx, plotWidth=0.3, event="S-", winmin=100, winmax=400)
+dotPlotByGroupNS <- dotplot(boxplot=T, neudata=list(allNeuronsNSEarlyVEHPreInf, allNeuronsNSEarlyVEHPostInf, allNeuronsNSEarlyAP5PreInf, allNeuronsNSEarlyAP5PostInf),
+                            expName="Early 100-400", Lines=T, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=400, ytop=12)
+save(dotPlotByGroupDS, file=paste(dataForRdir, "dotPlotByGroupDS.rdat", sep=""))
+save(dotPlotByGroupNS, file=paste(dataForRdir, "dotPlotByGroupNS.rdat", sep=""))
+
 
 #750-2000
-dotplot(boxplot=T, neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf, allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf),
+dotPlotByGroupDS_TAIL <- dotplot(boxplot=T, neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf, allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf),
         expName="Early 750-2000", Lines=T, col=colindx, plotWidth=0.3, event="S+", winmin=750, winmax=2000, ytop=12)
-dotplot(boxplot=T, neudata=list(allNeuronsNSEarlyVEHPreInf, allNeuronsNSEarlyVEHPostInf, allNeuronsNSEarlyAP5PreInf, allNeuronsNSEarlyAP5PostInf),
+
+dotPlotByGroupNS_TAIL <- dotplot(boxplot=T, neudata=list(allNeuronsNSEarlyVEHPreInf, allNeuronsNSEarlyVEHPostInf, allNeuronsNSEarlyAP5PreInf, allNeuronsNSEarlyAP5PostInf),
         expName="Early 750-2000", Lines=T, ytop=12, ybottom=-2, col=colindx, plotWidth=0.3, event="S-", winmin=750, winmax=2000)
-dotplot(boxplot=T, neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf, allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf),
-        expName="Early 750-2000", Lines=F, col=colindx, plotWidth=0.3, event="S+", winmin=750, winmax=2000, ytop=9)
-dotplot(boxplot=T, neudata=list(allNeuronsNSEarlyVEHPreInf, allNeuronsNSEarlyVEHPostInf, allNeuronsNSEarlyAP5PreInf, allNeuronsNSEarlyAP5PostInf),
-        expName="Early 750-2000", Lines=F, ytop=9, ybottom=-2, col=colindx, plotWidth=0.3, event="S-", winmin=750, winmax=2000)
+
+save(dotPlotByGroupDS_TAIL, file=paste(dataForRdir, "dotPlotByGroupDS_TAIL.rdat", sep=""))
+save(dotPlotByGroupNS_TAIL, file=paste(dataForRdir, "dotPlotByGroupNS_TAIL.rdat", sep=""))
 
 
 
 #Raw
-dotplot(boxplot=T, neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf, allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf),
-        expName="Early 100-400", Lines=T, formatDat="Raw", ytop=20, ybottom=0, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=400, comp=c("VEH", "AP5"))
-dotplot(boxplot=T, neudata=list(allNeuronsNSEarlyVEHPreInf, allNeuronsNSEarlyVEHPostInf, allNeuronsNSEarlyAP5PreInf, allNeuronsNSEarlyAP5PostInf),
-        expName="Early 100-400", Lines=T, formatDat="Raw", ytop=20, ybottom=0, col=colindx, plotWidth=0.3, event="S-", winmin=100, winmax=400, comp=c("VEH", "AP5"))
-dotplot(boxplot=T, neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf, allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf),
-        expName="Early 100-400", Lines=F, formatDat="Raw", ytop=20, ybottom=0, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=400, comp=c("VEH", "AP5"))
-dotplot(boxplot=T, neudata=list(allNeuronsNSEarlyVEHPreInf, allNeuronsNSEarlyVEHPostInf, allNeuronsNSEarlyAP5PreInf, allNeuronsNSEarlyAP5PostInf),
-        expName="Early 100-400", Lines=F, formatDat="Raw", ytop=20, ybottom=0, col=colindx, plotWidth=0.3, event="S-", winmin=100, winmax=400, comp=c("VEH", "AP5"))
+#100-400ms after the S+
+# dotplot(boxplot=T, neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf, allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf),
+#         expName="Early 100-400", Lines=T, formatDat="Raw", ytop=20, ybottom=0, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=400, comp=c("VEH", "AP5"))
+# dotplot(boxplot=T, neudata=list(allNeuronsNSEarlyVEHPreInf, allNeuronsNSEarlyVEHPostInf, allNeuronsNSEarlyAP5PreInf, allNeuronsNSEarlyAP5PostInf),
+#         expName="Early 100-400", Lines=T, formatDat="Raw", ytop=20, ybottom=0, col=colindx, plotWidth=0.3, event="S-", winmin=100, winmax=400, comp=c("VEH", "AP5"))
+# dotplot(boxplot=T, neudata=list(allNeuronsDSEarlyVEHPreInf, allNeuronsDSEarlyVEHPostInf, allNeuronsDSEarlyAP5PreInf, allNeuronsDSEarlyAP5PostInf),
+#         expName="Early 100-400", Lines=F, formatDat="Raw", ytop=20, ybottom=0, col=colindx, plotWidth=0.3, event="S+", winmin=100, winmax=400, comp=c("VEH", "AP5"))
+# dotplot(boxplot=T, neudata=list(allNeuronsNSEarlyVEHPreInf, allNeuronsNSEarlyVEHPostInf, allNeuronsNSEarlyAP5PreInf, allNeuronsNSEarlyAP5PostInf),
+#         expName="Early 100-400", Lines=F, formatDat="Raw", ytop=20, ybottom=0, col=colindx, plotWidth=0.3, event="S-", winmin=100, winmax=400, comp=c("VEH", "AP5"))
+
 
 
 ### STATISTICAL TEST
-#Comparison of cue-evoked firing rate (100ms-400ms window) pre vs post injection for both groups. I'll use a Wilcoxon paired test separately for each group
-#To get the dotplotDataVEH or dotplotDataAP5 objects, I need to run the code inside the dotplot function separately. I should fix this to make it easier.
-#Z scores with 2s BL
+#Comparison of cue-evoked firing rate (100ms-400ms window) pre vs post injection for both groups. I'll use a Wilcoxon paired test 
+# separately for each group 
+
 load(file=paste(dataForRdir, "dotPlotByGroup.rdat", sep=""))
-dotPlotByGroupEarly <- dotPlotByGroup
+dotPlotByGroupEarly <- dotPlotByGroupDS
 dotplotDataVEH_Early <- dotPlotByGroupEarly$VEH
 dotplotDataAP5_Early <- dotPlotByGroupEarly$AP5
 
+dotPlotByGroupEarlyNS <- dotPlotByGroupNS
+dotplotDataVEH_Early_NS <- dotPlotByGroupEarlyNS$VEH
+dotplotDataAP5_Early_NS <- dotPlotByGroupEarlyNS$AP5
+
 #100-400ms after S+
-wilcox.test(x=dotplotDataVEH_Early[,1], y=dotplotDataVEH_Early[,2], paired=T) #V = 22, p=0.6406; pcorrected=1 (Holm and with the 2 other "Late" wilcoxon tests into account); #Raw scores: V=24, p=0.4609
-wilcox.test(x=dotplotDataAP5_Early[,1], y=dotplotDataAP5_Early[,2], paired=T) #V = 424, p=1.824e-05; pcorrected= 7.296e-05 (Holm and with the 2 other late wilcoxon tests into account); Raw scores: V=80, p=0.0011
+# DS_VEH_Early pre vs. post
+wilcox.test(x=dotplotDataVEH_Early[,1], y=dotplotDataVEH_Early[,2], paired=T, alternative = "greater") #V = 22, p=0.3203; pcorrected=6.4060e-01 ; #Raw scores: V=24, p=0.4609
+# DS_AP5_Early pre vs. post
+wilcox.test(x=dotplotDataAP5_Early[,1], y=dotplotDataAP5_Early[,2], paired=T, alternative = "greater") #V = 424, p=9.122e-06; pcorrected= 5.4732e-05; Raw scores: V=80, p=0.0011
+# NS_VEH_Early pre vs. post
+wilcox.test(x=dotplotDataVEH_Early_NS[,1], y=dotplotDataVEH_Early_NS[,2], paired=T, alternative = "greater") #V = 22, p=8.2020e-02; pcorrected=1
+# NS_AP5_Early pre vs. post
+wilcox.test(x=dotplotDataAP5_Early_NS[,1], y=dotplotDataAP5_Early_NS[,2], paired=T, alternative = "greater") #V = 89, p=9.9890e-01; pcorrected= 1.0944e-04
+# DS vs NS: Early VEH PRE
+wilcox.test(x=dotplotDataVEH_Early[,1], y=dotplotDataVEH_Early_NS[,1], paired=T, alternative = "greater") #V = 36, p=1.9530e-02; pcorrected=3.1200e-02
+# DS vs. NS: Early AP5 PRE
+wilcox.test(x=dotplotDataAP5_Early[,1], y=dotplotDataAP5_Early_NS[,1], paired=T, alternative = "greater") #V = 442, p=4.7680e-06 ; pcorrected=9.5360e-06
+# DS vs. NS: Early VEH POST
+wilcox.test(x=dotplotDataVEH_Early[,2], y=dotplotDataVEH_Early_NS[,2], paired=T, alternative = "greater") #V = 35, p=3.1252e-02; pcorrected=3.1689e-02 
+# DS vs. NS: Early AP5 POST
+wilcox.test(x=dotplotDataAP5_Early[,2], y=dotplotDataAP5_Early_NS[,2], paired=T, alternative = "greater") #V = 430, p=2.7979e-05; pcorrected=5.5958e-05
+
+p.adjust(p=c(0.3203, 9.122e-06, 0.02734, 0.9989, 0.003906, 5.96e-07, 0.007813, 3.997e-06))
+#  6.4060e-01 5.4732e-05 8.2020e-02 9.9890e-01 1.9530e-02 4.7680e-06 3.1252e-02 2.7979e-05
+
 
 #750-2000ms after S+
-load(file=paste(dataForRdir, "dotPlotByGroup.rdat", sep=""))
-dotPlotByGroupEarly_NS_Tail <- dotPlotByGroup
-save(dotPlotByGroupEarly_DS_Tail, file=paste(dataForRdir, "dotPlotByGroupEarly_DS_Tail.rdat", sep=""))
-save(dotPlotByGroupEarly_NS_Tail, file=paste(dataForRdir, "dotPlotByGroupEarly_NS_Tail.rdat", sep=""))
+load(file=paste(dataForRdir, "dotPlotByGroupDS_TAIL.rdat", sep=""))
+load(file=paste(dataForRdir, "dotPlotByGroupNS_TAIL.rdat", sep=""))
 
-wilcox.test(x=dotplotDataVEH_Early[,1], y=dotplotDataVEH_Early[,2], paired=T) #V = 6, p=0.1094; pcorrected=0.1839 
-wilcox.test(x=dotplotDataAP5_Early[,1], y=dotplotDataAP5_Early[,2], paired=T) #V = 150, p=0.09195; pcorrected= 0.1839
+# Create objects that will be useful for the comparisons
+dotPlotByGroupEarly <- dotPlotByGroupDS_TAIL
+dotplotDataVEH_Early <- dotPlotByGroupEarly$VEH
+dotplotDataAP5_Early <- dotPlotByGroupEarly$AP5
 
-#Tail: DS pre VEH vs. NS pre VEH and DS post VEH vs. NS post VEH
-wilcox.test(x=dotPlotByGroupEarly_DS_Tail$VEH[,1], y=dotPlotByGroupEarly_NS_Tail$VEH[,1], paired=T) #v=31; p=0.0781; pcorrected=0.1839 
-wilcox.test(x=dotPlotByGroupEarly_DS_Tail$VEH[,2], y=dotPlotByGroupEarly_NS_Tail$VEH[,2], paired=T) #v=30; p=0.1094; pcorrected=0.1839 
+dotPlotByGroupEarlyNS <- dotPlotByGroupNS_TAIL
+dotplotDataVEH_Early_NS <- dotPlotByGroupEarlyNS$VEH
+dotplotDataAP5_Early_NS <- dotPlotByGroupEarlyNS$AP5
+
+#750-2000ms after S+
+# DS_VEH_Early pre vs. post
+wilcox.test(x=dotplotDataVEH_Early[,1], y=dotplotDataVEH_Early[,2], paired=T, alternative = "greater") #V = 6, p=0.9609; pcorrected=6.4060e-01 ; #Raw scores: V=24, p=0.4609
+# DS_AP5_Early pre vs. post
+wilcox.test(x=dotplotDataAP5_Early[,1], y=dotplotDataAP5_Early[,2], paired=T, alternative = "greater") #V = 150, p=0.956; pcorrected= 5.4732e-05; Raw scores: V=80, p=0.0011
+# NS_VEH_Early pre vs. post
+wilcox.test(x=dotplotDataVEH_Early_NS[,1], y=dotplotDataVEH_Early_NS[,2], paired=T, alternative = "greater") #V = 22, p=0.3203; pcorrected=1
+# NS_AP5_Early pre vs. post
+wilcox.test(x=dotplotDataAP5_Early_NS[,1], y=dotplotDataAP5_Early_NS[,2], paired=T, alternative = "greater") #V = 162, p=0.927; pcorrected= 1.0944e-04
+# DS vs NS: Early VEH PRE
+wilcox.test(x=dotplotDataVEH_Early[,1], y=dotplotDataVEH_Early_NS[,1], paired=T, alternative = "greater") #V = 31, p=0.03906; pcorrected=3.1200e-02
+# DS vs. NS: Early AP5 PRE
+wilcox.test(x=dotplotDataAP5_Early[,1], y=dotplotDataAP5_Early_NS[,1], paired=T, alternative = "greater") #V = 260, p=0.2919 ; pcorrected=9.5360e-06
+# DS vs. NS: Early VEH POST
+wilcox.test(x=dotplotDataVEH_Early[,2], y=dotplotDataVEH_Early_NS[,2], paired=T, alternative = "greater") #V = 30, p=0.05469; pcorrected=3.1689e-02 
+# DS vs. NS: Early AP5 POST
+wilcox.test(x=dotplotDataAP5_Early[,2], y=dotplotDataAP5_Early_NS[,2], paired=T, alternative = "greater") #V = 292, p=0.1143; pcorrected=5.5958e-05
 
 
-#Tail: DS pre AP5 vs. NS pre AP5 and DS post AP5 vs. NS post AP5
-wilcox.test(x=dotPlotByGroupEarly_DS_Tail$AP5[,1], y=dotPlotByGroupEarly_NS_Tail$AP5[,1], paired=T) #V = 260, p-value = 0.58381; pcorrected=0.1839 
-wilcox.test(x=dotPlotByGroupEarly_DS_Tail$AP5[,2], y=dotPlotByGroupEarly_NS_Tail$AP5[,2], paired=T) #V = 292, p-value = 0.2286; pcorrected=0.1839 
 
-
-p.adjust(p=c(0.1094, 0.09195, 0.0781, 0.1094, 0.58381, 0.2286), method="holm") #0.46860 0.46860 0.46860 0.46860 0.58381 0.46860
 
 
 
 
 #Correct p values taking into account the other 2 wilcoxon tests from the "Late" test
-p.adjust(p=c(0.64, 1.824e-05, 0.000862, 0.01344), method="holm")
-#6.400e-01 7.296e-05 2.340e-03, 2.688e-01
+p.adjust(p=c(0.9609, 0.956, 0.3203, 0.927, 0.03906, 0.2919, 0.05469, 0.1143), method="holm")
+# 1.00000 1.00000 1.00000 1.00000 0.31248 1.00000 0.38283 0.68580
 
-
-#Raw scores
-p.adjust(p=c(0.46, 0.0011, 0.045, 0.03), method="holm")
-# [1] 0.4600 0.0044 0.0900 0.0900
 
 
 ###############################################################
@@ -1538,6 +1591,8 @@ contTable_EarlyAP5 <- t(data.frame(Pre=as.matrix(table(EarlyAP5PreInf_ExcUnits))
 chisq.test(contTable_EarlyVEH) #X-squared = 0, df = 1, p-value = 1
 chisq.test(contTable_EarlyAP5) #X-squared = 0.28202, df = 1, p-value = 0.5954
 
+fisher.test(contTable_EarlyVEH) #CI: 0.1557766 18.7666075, odds ratio= 1.613716,  p-value = 1
+fisher.test(contTable_EarlyAP5) #CI:  0.2007157 2.1061495, odds ratio=0.6585366,  p-value = 0.5959
 
 
 

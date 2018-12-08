@@ -7,22 +7,19 @@
 # NSrespAll -> Same thing but of NSs
 # DStaskAcc -> How much faster was the animal to enter the rec. after the cue vs. during the ITI (average of 100 random 10s windows
 # NStaskAcc -> same but of NS
+# ITIlatency -> "Pseudolatency". Calculation of mean latency to enter into the compartment in 100 10s windows randomly placed throughout the ITI (excluding the first 5s -in case there are consumption-related entries- and the last 10s to avoid counting the cue period)
 # DStimeToSpare -> 10-latency to enter after DS onset
 # NStimeToSpare -> same but of NS
-#
-# The parameters are:
-# "MovAvg" --> Select how to calculate the ITI pseudolatency. Options: "All", "No" or "Impinged only"
-#    a) "All":To each trial, assign the average ITI pseudolatency in the 5 trial window around it (5 trials before, 5 trials after and the actual trial); b) "No"
-#    b) "No": to each trial assign its own ITI pseudolatency
-#    c) "Impinged only": In trials in which the animal's head was already inside at the time the ITI pseudolatency period started, assign the moving average of the 5 trial window around that trial. If the head of the animal was not inside at that time, just assign the ITI pseudolatency value of that trial.
-# "funcdirect" --> the folder where to find the functions that are called by the function
-# "datafolder" --> the folder with the MedPC files
-# "dataForRdir" --> the folder where the function is going to store the objects it creates
-# "dataForRCumulative" --> the folder where the functino is going to store objects that I will later use for cumulative performance graphs
-# "cuelength" --> length of the cue in case the animal doesn't make an entry (in seconds)
 
-MedPCextract <- function(MovAvg="Impinged only", funcdirect=funcdirect, datafolder=datafolder, 
-                         dataForRdir=dataForRdir, dataForRCumulative=dataForRCumulative, cuelength){
+
+### This is what the parameters are:
+
+# MovAvg -> There are several options for how to deal with trials in which the animal's head is inside at the time the precue 10s ITI window starts:
+#  - MovAvg=="All": for each trial, calculate the average ITI latency of the +/- 5 trials around the trial of interest. The 5 first and last trials will be assigned the same value for this calculation (the mean of the first or last 11 trials)
+#  - MovAvg==F: for each trial, the ITI latency will be calculated using the latency to make an entry in the 10s window preceding the cue (regardless of whether the rat was already inside or not)
+#  - MovAvg=="Impinged only". I will locate the trials in which the head of the animal was already inside. I will only use the average ITI latency in the +/-5 trial in those "problematic" trials. All of the otehr trials will be assigned the normal ITI latency (latency to make an entry in the 10s precue window on that trial)
+
+MedPCextract <- function(MovAvg, funcdirect=funcdirect, datafolder=datafolder, dataForRdir=dataForRdir, dataForRCumulative=dataForRCumulative, cuelength){
         
         load (paste(funcdirect,"CStask.Rfunc",sep=""))
         load (paste(funcdirect,"mpcextract_blockSingle.Rfunc",sep=""))
@@ -31,10 +28,11 @@ MedPCextract <- function(MovAvg="Impinged only", funcdirect=funcdirect, datafold
         mpcdatadir = datafolder
         allfiles = list.files(mpcdatadir)
         
+        cuelength = cuelength #in sec
+        
         #Create list alldata in which each element is the data of each animal during a session
         alldata = list()
-        for (i in(1:length(allfiles))) { 
-                
+        for (i in(1:length(allfiles))) {                                          
                 rawmpc = mpcextractSingle.Rfunc(paste(mpcdatadir, allfiles[i], sep = ""))
                 toanalyze = CStask.Rfunc(rawmpc)
                 
@@ -61,7 +59,7 @@ MedPCextract <- function(MovAvg="Impinged only", funcdirect=funcdirect, datafold
                 
                 #CSplusresponse = CSplusresponse[-which(is.na(CSplusresponse))]
                 
-                correctTrials <- findInterval(CSplusresponse[-which(is.na(CSplusresponse))], toanalyze$CSpluscue)
+                correctTrials <- findInterval(toanalyze$rewarddelivery, toanalyze$CSpluscue)
                 
                 #In July 2017 I changed the task so that the cue extends 2s after correct entry, so calculating the CSplusEnd will be different after 07/01/2017
                 CSplusEnd = vector()
@@ -70,8 +68,7 @@ MedPCextract <- function(MovAvg="Impinged only", funcdirect=funcdirect, datafold
                 {
                         for(j in 1:length(CSpluscue)){
                                 if(sum(j==correctTrials)>0){
-                                        selTrial <- as.numeric(correctTrials[j==correctTrials])
-                                        CSplusEnd[j] = toanalyze$rewarddelivery[selTrial]
+                                        CSplusEnd[j] = toanalyze$rewarddelivery[j==correctTrials]
                                 } else {
                                         CSplusEnd[j] = toanalyze$CSpluscue[j] + cuelength
                                 }
@@ -79,14 +76,14 @@ MedPCextract <- function(MovAvg="Impinged only", funcdirect=funcdirect, datafold
                 } else { #after change
                         for(j in 1:length(CSpluscue)){
                                 if(sum(j==correctTrials)>0){
-                                        selTrial <- as.numeric(correctTrials[j==correctTrials])
-                                        CSplusEnd[j] = (CSplusresponse[selTrial])+2
+                                        CSplusEnd[j] = toanalyze$rewarddelivery[j==correctTrials]+2
                                 } else {
-                                        
                                         CSplusEnd[j] = toanalyze$CSpluscue[j] + cuelength
                                 }
                         }
                 }
+                
+                
                 
                 CSminusEnd = vector()
                 for(j in 1:length(CSminuscue)){
@@ -143,7 +140,7 @@ MedPCextract <- function(MovAvg="Impinged only", funcdirect=funcdirect, datafold
                 allCuesOrder[is.element(allCues, toanalyze$CSminuscue)] <- 2
                 
                 firstTr <- 1
-                
+
                 ITIlatency <- sapply(seq(firstTr, length(ITIlength)), function(x){
                         ITIwdwStarts <-allCues[x]-cuelength
                         ITIwdwEnds <- allCues[x]
@@ -159,7 +156,7 @@ MedPCextract <- function(MovAvg="Impinged only", funcdirect=funcdirect, datafold
                         return(ITIlat)
                         
                 })
-                
+            
                 
                 #Go to cued entry latency values and replace NA values with the length of the cue
                 CSplusLat[is.na(CSplusLat)] <- cuelength
@@ -170,7 +167,7 @@ MedPCextract <- function(MovAvg="Impinged only", funcdirect=funcdirect, datafold
                 #        allCuesOrder2 <- allCuesOrder; CSplusLat2 <- CSplusLat}
                 
                 allCuesOrder2 <- allCuesOrder; CSplusLat2 <- CSplusLat
-                CSplusTA <- ITIlatency[which(allCuesOrder2==1)] - CSplusLat #TA stands for "Task Accuracy", which I also later call performance index
+                CSplusTA <- ITIlatency[which(allCuesOrder2==1)] - CSplusLat
                 CSminusTA <- ITIlatency[which(allCuesOrder2==2)] - CSminusLat
                 
                 alldata[[i]] = list(ratname = ratname, testdate = testdate, expt = EXPT, group=group, receptacleentries = receptacleentries, receptacleexits = toanalyze$receptacleexits,
@@ -232,7 +229,7 @@ MedPCextract <- function(MovAvg="Impinged only", funcdirect=funcdirect, datafold
                 NSperc [[i]]<- length(alldata[[i]]$CSminusresponse[which(alldata[[i]]$CSminusresponse>0)])/length(alldata[[i]]$CSminuscue)
                 ITItotal[[i]] <- sum(alldata[[i]]$ITIlength)
                 ITIperSec[[i]] <- round((length(alldata[[i]]$receptacleentries) - length(c(alldata[[i]]$CSplusresponse, alldata[[i]]$CSminusresponse)))/ITItotal[[i]], 2)
-                #if(ITIperSec[[i]]<0){ITIperSec[[i]]=0} else {ITIperSec[[i]]=ITIperSec[[i]]}
+                if(ITIperSec[[i]]<0){ITIperSec[[i]]=0}
                 ITIlatency[[i]] <- mean(alldata[[i]]$ITIlatency, na.rm=T)
                 latencyCSplus[[i]] <- mean(alldata[[i]]$CSplusLat, na.rm=T)
                 latencyCSminus[[i]] <- mean(alldata[[i]]$CSminusLat, na.rm=T)
@@ -291,13 +288,6 @@ MedPCextract <- function(MovAvg="Impinged only", funcdirect=funcdirect, datafold
                 }))
         })
         
-        #BC of an issue with MedPC, sometimes the last trial was not recorded or MedPC allowed one more trial to be presented. Different lengths of DS and NS give me errors, so make them the same length (length of the shortest one)
-        DSlength <- sapply(DSrespAll, length)
-        NSlength <- sapply(NSrespAll, length); lengthIdx <- NSlength #Bc NSlength is always shorter
-        
-        DSrespAll <- lapply(seq(1, length(DSrespAll)), function(k){DSrespAll[[k]][1:lengthIdx[k]]})
-        
-        #DSlatency
         DSlatency <- lapply(seq(1, length(rats)), function(k){
                 do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
                         sessIdx <- idx[[k]][m]
@@ -308,9 +298,6 @@ MedPCextract <- function(MovAvg="Impinged only", funcdirect=funcdirect, datafold
                 }))
         })
         
-        DSlatency <- lapply(seq(1, length(DSlatency)), function(k){DSlatency[[k]][1:lengthIdx[k]]})
-        
-        #DStimetoSpare (opposite of latency)
         DStimeToSpare <- lapply(seq(1, length(rats)), function(k){
                 do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
                         sessIdx <- idx[[k]][m]
@@ -321,10 +308,6 @@ MedPCextract <- function(MovAvg="Impinged only", funcdirect=funcdirect, datafold
                 }))
         })
         
-        DStimeToSpare <- lapply(seq(1, length(DStimeToSpare)), function(k){DStimeToSpare[[k]][1:lengthIdx[k]]})
-        
-        
-        #NStimeToSpare
         NStimeToSpare <- lapply(seq(1, length(rats)), function(k){
                 do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
                         sessIdx <- idx[[k]][m]
@@ -335,7 +318,6 @@ MedPCextract <- function(MovAvg="Impinged only", funcdirect=funcdirect, datafold
                 }))
         })
         
-        #NSlatency
         NSlatency <- lapply(seq(1, length(rats)), function(k){
                 do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
                         sessIdx <- idx[[k]][m]
@@ -346,7 +328,6 @@ MedPCextract <- function(MovAvg="Impinged only", funcdirect=funcdirect, datafold
                 }))
         })
         
-        #DS task accuracy (latency before the cue vs latency after the cue). How much faster to enter the receptacle after the cue vs before the cue
         DStaskAcc <- lapply(seq(1, length(rats)), function(k){
                 do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
                         sessIdx <- idx[[k]][m]
@@ -355,10 +336,6 @@ MedPCextract <- function(MovAvg="Impinged only", funcdirect=funcdirect, datafold
                 }))
         })
         
-        DStaskAcc <- lapply(seq(1, length(DStaskAcc)), function(k){DStaskAcc[[k]][1:lengthIdx[k]]})
-        
-        
-        #NS task accuracy
         NStaskAcc <- lapply(seq(1, length(rats)), function(k){
                 do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
                         sessIdx <- idx[[k]][m]
@@ -380,132 +357,111 @@ MedPCextract <- function(MovAvg="Impinged only", funcdirect=funcdirect, datafold
         
         ### Calculate ITI latency using a moving average of +/- 5 trials
         cuesOrderAll <- lapply(seq(1, length(rats)), function(k){
-                do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
-                        sessIdx <- idx[[k]][m]
-                        cuesOrder <- alldata[[sessIdx]]$orderCues
-                }))
+          do.call("c", lapply(seq(1, length(idx[[k]])), function(m){
+            sessIdx <- idx[[k]][m]
+            cuesOrder <- alldata[[sessIdx]]$orderCues
+          }))
         })
         
         ITIlatMovingAvg <- lapply(seq(1, length(rats)), function(k){
-                
-                #Number of trials around the trial of interest that I want to use for the moving window. Change this parameter to change the number of trials in that window
-                nTrialWdw <- 5 
-                nTrials <- length(ITIlatency[[k]])
-                
-                #Let's say the moving average is the moving average of 5 trials. If the trial in question is number 3, let's say, 
-                #then I can't choose the 5 trials before it. In that case, average the first 11 trials and assign that value to 
-                #trial 3 (bc in trials in the middle of the session, I average 11 trials to get the value: the 5 before, 5 after 
-                #and the trial in question). Same thing if the trial is one of the last ones.
-                
-                sapply(seq(1, nTrials), function(l){
-                        if(l<(1+nTrialWdw)){
-                                trlIdx <- 1:((nTrialWdw*2)+1)
-                        } 
-                        if(l>(nTrials-nTrialWdw)){
-                                trlIdx <- (nTrials-(nTrialWdw*2)):nTrials
-                        }
-                        if(l>nTrialWdw & l<=(nTrials-nTrialWdw)){
-                                trlIdx <- (l-nTrialWdw):(l+nTrialWdw)
-                        }
-                        
-                        avg <- mean(ITIlatency[[k]][trlIdx], na.rm=T)
-                })
+          nTrialWdw <- 5 #Number of trials around the trial of interest that I want to use for the moving window
+          nTrials <- length(ITIlatency[[k]])
+          sapply(seq(1, nTrials), function(l){
+            if(l<(1+nTrialWdw)){
+              trlIdx <- 1:((nTrialWdw*2)+1)
+            } 
+            if(l>(nTrials-nTrialWdw)){
+              trlIdx <- (nTrials-(nTrialWdw*2)):nTrials
+            }
+            if(l>nTrialWdw & l<=(nTrials-nTrialWdw)){
+              trlIdx <- (l-nTrialWdw):(l+nTrialWdw)
+            }
+            
+            avg <- mean(ITIlatency[[k]][trlIdx], na.rm=T)
+          })
         })
         
-        #Task accuracy in S+ trials using the moving average
         DStaskAccMA <- lapply(seq(1, length(rats)), function(k){
-                DS_ITIlatMA <- ITIlatMovingAvg[[k]][cuesOrderAll[[k]]==1]
-                DS_ITIlatMA <- DS_ITIlatMA[1:lengthIdx[k]]
-                
-                DStaskAccMA <- DS_ITIlatMA-DSlatency[[k]]
+          DS_ITIlatMA <- ITIlatMovingAvg[[k]][cuesOrderAll[[k]]==1]
+          DStaskAccMA <- DS_ITIlatMA-DSlatency[[k]]
         })
         
-        #Task accuracy in S- trials using the moving average
         NStaskAccMA <- lapply(seq(1, length(rats)), function(k){
-                NS_ITIlatMA <- ITIlatMovingAvg[[k]][cuesOrderAll[[k]]==2]
-                NStaskAccMA <- NS_ITIlatMA-NSlatency[[k]]
+          NS_ITIlatMA <- ITIlatMovingAvg[[k]][cuesOrderAll[[k]]==2]
+          NStaskAccMA <- NS_ITIlatMA-NSlatency[[k]]
         })
         
-        #If no moving average is to be used to calculate ITI pseudolatency. This is not necessary but just to represent every possible value of the parameter "MovAvg".
-        if(MovAvg=="No"){
-                DStaskAcc <- DStaskAcc
-                NStaskAcc <- NStaskAcc
-                ITIlatency <- ITIlatency
-        }
-        
-        #If moving average is to be used to calculate ITI pseudolatency in all trials.
         if(MovAvg=="All"){
-                ITIlatency <- ITIlatMovingAvg
-                DStaskAcc <- DStaskAccMA
-                NStaskAcc <- NStaskAccMA
+          ITIlatency <- ITIlatMovingAvg
+          DStaskAcc <- DStaskAccMA
+          NStaskAcc <- NStaskAccMA
         }
         
-        #If moving average is to be used to calculate ITI pseudolatency ONLY in trials in which the animal's head was already inside
+        
         if(MovAvg=="Impinged only"){
-                
-                #Just for calculating how pervasive the problem of the rat being inside the compartment in the ITI pseudolat. window is. This gives me an index of the trials in which the animals were inside the compartment at the time the critical "ITI window" started
-                Impinge <- lapply(seq(1, length(alldata)), function(x){
-                        entries <- alldata[[x]]$receptacleentries
-                        exits <- alldata[[x]]$receptacleexits
-                        
-                        #Pairs of entries-exits
-                        pairs <- lapply(seq(1, length(entries)), function(y){
-                                a <- c(entries[y], exits[y])
-                        })
-                        trialStarts <- alldata[[x]]$trialStart
-                        ITIprecue <- alldata[[x]]$allCues-10
-                        
-                        #Index: ITI window that started in between what two entries. Substitute any 0 value (usually the first one) by 1, so that when we use this as an index we don't lose one trial
-                        ITItoEntryIdx <- findInterval(ITIprecue, entries)
-                        ITItoEntryIdx[ITItoEntryIdx==0]<- 1
-                        
-                        #Subset the pairs of entries-exits that might be problematic (an ITI window happened between two consecutive entries. Now we want to test if the rat exited before the start of the ITI window)
-                        toTest <- pairs[ITItoEntryIdx]
-                        
-                        #Select trials based on what cue came on before (modify accordingly). 1=DS, 2=NS.
-                        #preTrialCue <- c(0, alldata[[x]]$orderCues[-length(alldata[[x]]$orderCues)])
-                        
-                        ImpingeTrials <- sapply(seq(1, length(toTest)), function(z){
-                                test <- ITIprecue[z]>toTest[[z]][1] & ITIprecue[z]<toTest[[z]][2] 
-                                return(test)
-                        })
-                        return(ImpingeTrials)
-                })
-                
-                #This will give me the index of trials in which the animals were inside the receptacle by rat
-                ImpingeIdx <- lapply(seq(1, length(rats)), function(k){
-                        selSess <- idx[[k]]
-                        do.call("c", lapply(seq(1, length(selSess)), function(l){
-                                Impinge[[selSess[l]]]
-                        }))
-                })
-                
-                #For each rat, use normal ITI latency (the one that is calculated with the precue window alone) and, in the trials in which the animal's head is still in at the beginning of the ITI window, use the average of the +/-5 trials around the trial
-                ITIlatCorrected <- lapply(seq(1, length(rats)), function(k){
-                        sapply(seq(1, length(ImpingeIdx[[k]])), function(l){
-                                if(ImpingeIdx[[k]][l]==FALSE){ITIlat <- ITIlatency[[k]][l]} #If the head of the animal was NOT inside at the beginning of the window, just choose the normal ITI latency for that trial
-                                if(ImpingeIdx[[k]][l]==TRUE){ITIlat <- ITIlatMovingAvg[[k]][l]} #If his head was inside at the time the ITI window started, then replace the value with the moving average for that trial (the +/- 5 trial average)
-                                ITIlat
-                        })
-                })
-                
-                DStaskAccCorrected <- lapply(seq(1, length(rats)), function(k){
-                        DS_ITIlatCorr <- ITIlatCorrected[[k]][cuesOrderAll[[k]]==1]
-                        DS_ITIlatCorr <- DS_ITIlatCorr[1:lengthIdx[[k]]]
-                        DStaskAccMA <- DS_ITIlatCorr-DSlatency[[k]]
-                })
-                
-                NStaskAccCorrected <- lapply(seq(1, length(rats)), function(k){
-                        NS_ITIlatCorr <- ITIlatCorrected[[k]][cuesOrderAll[[k]]==2]
-                        NStaskAccMA <- NS_ITIlatCorr-NSlatency[[k]]
-                })
-                
-                #Assign the new corrected values to ITI latency, DS task accuracy and NS task accuracy
-                ITIlatency <- ITIlatCorrected
-                DStaskAcc <- DStaskAccCorrected
-                NStaskAcc <- NStaskAccCorrected
-        }
+         
+          #This gives me an index of the trials in which the animals were inside the compartment at the time the critical "ITI window" started
+          Impinge <- lapply(seq(1, length(alldata)), function(x){
+            entries <- alldata[[x]]$receptacleentries
+            exits <- alldata[[x]]$receptacleexits
+            
+            #Pairs of entries-exits
+            pairs <- lapply(seq(1, length(entries)), function(y){
+              a <- c(entries[y], exits[y])
+            })
+            trialStarts <- alldata[[x]]$trialStart
+            ITIprecue <- alldata[[x]]$allCues-10
+            
+            #Index: ITI window that started in between what two entries. Substitute any 0 value (usually the first one) by 1, so that when we use this as an index we don't lose one trial
+            ITItoEntryIdx <- findInterval(ITIprecue, entries)
+            ITItoEntryIdx[ITItoEntryIdx==0]<- 1
+            
+            #Subset the pairs of entries-exits that might be problematic (an ITI window happened between two consecutive entries. Now we want to test if the rat exited before the start of the ITI window)
+            toTest <- pairs[ITItoEntryIdx]
+            
+            #Select trials based on what cue came on before (modify accordingly). 1=DS, 2=NS.
+            #preTrialCue <- c(0, alldata[[x]]$orderCues[-length(alldata[[x]]$orderCues)])
+            
+            ImpingeTrials <- sapply(seq(1, length(toTest)), function(z){
+                test <- ITIprecue[z]>toTest[[z]][1] & ITIprecue[z]<toTest[[z]][2] 
+              return(test)
+            })
+            return(ImpingeTrials)
+          })
+          
+          #This will give me the index of trials in which the animals were inside the receptacle by rat
+          ImpingeIdx <- lapply(seq(1, length(rats)), function(k){
+            selSess <- idx[[k]]
+            do.call("c", lapply(seq(1, length(selSess)), function(l){
+              Impinge[[selSess[l]]]
+            }))
+          })
         
+          #For each rat, use normal ITI latency (the one that is calculated with the precue window alone) and, in the trials in which the animal's head is still in at the beginning of the ITI window, use the average of the +/-5 trials around the trial
+          ITIlatCorrected <- lapply(seq(1, length(rats)), function(k){
+            sapply(seq(1, length(ImpingeIdx[[k]])), function(l){
+              if(ImpingeIdx[[k]][l]==FALSE){ITIlat <- ITIlatency[[k]][l]} #If the head of the animal was NOT inside at the beginning of the window, just choose the normal ITI latency for that trial
+              if(ImpingeIdx[[k]][l]==TRUE){ITIlat <- ITIlatMovingAvg[[k]][l]} #If his head was inside at the time the ITI window started, then replace the value with the moving average for that trial (the +/- 5 trial average)
+              ITIlat
+            })
+          })
+          
+          DStaskAccCorrected <- lapply(seq(1, length(rats)), function(k){
+            DS_ITIlatCorr <- ITIlatCorrected[[k]][cuesOrderAll[[k]]==1]
+            DStaskAccMA <- DS_ITIlatCorr-DSlatency[[k]]
+          })
+          
+          NStaskAccCorrected <- lapply(seq(1, length(rats)), function(k){
+            NS_ITIlatCorr <- ITIlatCorrected[[k]][cuesOrderAll[[k]]==2]
+            NStaskAccMA <- NS_ITIlatCorr-NSlatency[[k]]
+          })
+          
+          #Assign the new corrected values to ITI latency, DS task accuracy and NS task accuracy
+          ITIlatency <- ITIlatCorrected
+          DStaskAcc <- DStaskAccCorrected
+          NStaskAcc <- NStaskAccCorrected
+          }
+      
         
         
         ###### SAVING OBJECTS #########
@@ -524,6 +480,8 @@ MedPCextract <- function(MovAvg="Impinged only", funcdirect=funcdirect, datafold
         save(ITIlatency,  file=paste(dataForRCumulative, "ITIlatency.rdat", sep=""))
 }
 
+save(MedPCextract, file="C:/Users/Kevin Caref/Dropbox/NMDA/EXP3_NAc FR acquisition/R functions/MedPCextract.R")
+save(MedPCextract, file="C:/Users/Kevin Caref/Dropbox/NMDA/R functions/MedPCextract.R")
 
-funcdirect <- "E:/Dropbox/NMDA/R functions/"
-save(MedPCextract, file=paste(funcdirect, "MedPCextract.r", sep=""))
+save(MedPCextract, file="E:/Dropbox/NMDA/EXP3_NAc FR acquisition/R functions/MedPCextract.R")
+save(MedPCextract, file="E:/Dropbox/NMDA/R functions/MedPCextract.R")

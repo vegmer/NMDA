@@ -1253,7 +1253,8 @@ dotplot(boxplot=T, neudata=list(allNeuronsDSLateVEHPreInf, allNeuronsDSLateVEHPo
 dotplot(boxplot=T, neudata=list(allNeuronsNSLateVEHPreInf, allNeuronsNSLateVEHPostInf, allNeuronsNSLateAP5PreInf, allNeuronsNSLateAP5PostInf),
         expName="Late 100-400", Lines=F, ytop=9, ybottom=-2, col=colindx, plotWidth=0.3, event="S-", winmin=100, winmax=400, comp=c("VEH", "AP5"))
 
-
+save(dotPlotByGroupLate_DS_Spike, file=paste(dataForRdir, "dotPlotByGroupLate_DS_Spike.rdat", sep=""))
+save(dotPlotByGroupLate_NS_Spike, file=paste(dataForRdir, "dotPlotByGroupLate_NS_Spike.rdat", sep=""))
 
 #750-2000ms after S+ Z scores
 dotPlotByGroupLate_DS_Tail <- dotplot(boxplot=T, neudata=list(allNeuronsDSLateVEHPreInf, allNeuronsDSLateVEHPostInf, allNeuronsDSLateAP5PreInf, allNeuronsDSLateAP5PostInf),
@@ -1265,6 +1266,8 @@ dotplot(boxplot=T, neudata=list(allNeuronsDSLateVEHPreInf, allNeuronsDSLateVEHPo
 dotplot(boxplot=T, neudata=list(allNeuronsNSLateVEHPreInf, allNeuronsNSLateVEHPostInf, allNeuronsNSLateAP5PreInf, allNeuronsNSLateAP5PostInf),
         expName="Late 750-2000", Lines=F, ytop=9, ybottom=-2, col=colindx, plotWidth=0.3, event="S-", winmin=750, winmax=2000)
 
+save(dotPlotByGroupLate_DS_Tail, file=paste(dataForRdir, "dotPlotByGroupLate_DS_Tail.rdat", sep=""))
+save(dotPlotByGroupLate_NS_Tail, file=paste(dataForRdir, "dotPlotByGroupLate_NS_Tail.rdat", sep=""))
 
 
 #Raw
@@ -1279,44 +1282,82 @@ dotplot(boxplot=T, neudata=list(allNeuronsNSLateVEHPreInf, allNeuronsNSLateVEHPo
 
 
 
+#100-400ms
+
+#Late VEH DS: pre vs. post
+wilcox.test(x=dotPlotByGroupLate_DS_Spike$VEH[,1], y=dotPlotByGroupLate_DS_Spike$VEH[,2], paired=T, alternative = "greater") 
+#V = 257, p=0.9996; pcorrected=1
+
+#Late AP5 DS: pre vs. post
+wilcox.test(x=dotPlotByGroupLate_DS_Spike$AP5[,1], y=dotPlotByGroupLate_DS_Spike$AP5[,2], paired=T, alternative = "greater") 
+#V = 1213, p-value = 0.05104; pcorrected= 2.0416e-01
+
+#Late VEH NS: pre vs. post
+wilcox.test(x=dotPlotByGroupLate_NS_Spike$VEH[,1], y=dotPlotByGroupLate_NS_Spike$VEH[,2], paired=T, alternative = "greater") 
+#V = 428, p=  0.9251; pcorrected=1
+
+#Late AP5 NS: pre vs. post
+wilcox.test(x=dotPlotByGroupLate_NS_Spike$AP5[,1], y=dotPlotByGroupLate_NS_Spike$AP5[,2], paired=T, alternative = "greater") 
+#V = 908, p-value = 0.4326; pcorrected= 1
+
+#Late VEH pre: DS vs. NS
+wilcox.test(x=dotPlotByGroupLate_DS_Spike$VEH[,1], y=dotPlotByGroupLate_NS_Spike$VEH[,1], paired=T, alternative = "greater") 
+#V = 1065, p-value = 1.007e-09; pcorrected=5.0350e-09
+
+#Late AP5 pre: DS vs. NS
+wilcox.test(x=dotPlotByGroupLate_DS_Spike$AP5[,1], y=dotPlotByGroupLate_NS_Spike$AP5[,1], paired=T, alternative = "greater") 
+#V = 1731, p-value = 8.75e-11; pcorrected=7.0000e-10
+
+#Late VEH post: DS vs. NS
+wilcox.test(x=dotPlotByGroupLate_DS_Spike$VEH[,2], y=dotPlotByGroupLate_NS_Spike$VEH[,2], paired=T, alternative = "greater") 
+#v=1072; p= 4.583e-10; pcorrected=2.7498e-09 
+
+#Late AP5 post: DS vs. NS
+wilcox.test(x=dotPlotByGroupLate_DS_Spike$AP5[,2], y=dotPlotByGroupLate_NS_Spike$AP5[,2], paired=T, alternative = "greater") 
+#v=1714; p= 2.007e-10; pcorrected=  1.4049e-09
+
+
+p.adjust(p=c(0.9996,0.05104, 0.9251,  0.4326, 1.007e-09, 8.75e-11, 4.583e-10, 2.007e-10), method="holm")
+# 1.0000e+00 2.0416e-01 1.0000e+00  1.0000e+00 5.0350e-09 7.0000e-10 2.7498e-09 1.4049e-09
+
 
 #750-2000ms after S+
-load(file=paste(dataForRdir, "dotPlotByGroup.rdat", sep=""))
-save(dotPlotByGroupLate_DS_Tail, file=paste(dataForRdir, "dotPlotByGroupLate_DS_Tail.rdat", sep=""))
-save(dotPlotByGroupLate_NS_Tail, file=paste(dataForRdir, "dotPlotByGroupLate_NS_Tail.rdat", sep=""))
+#Late VEH DS: pre vs. post
+wilcox.test(x=dotPlotByGroupLate_DS_Tail$VEH[,1], y=dotPlotByGroupLate_DS_Tail$VEH[,2], paired=T, alternative = "greater") 
+#V = 614, p-value = 0.3018; pcorrected=1
 
-wilcox.test(x=dotplotDataVEH_Late[,1], y=dotplotDataVEH_Late[,2], paired=T) #V = 6, p=0.1094; pcorrected=0.1839 
-wilcox.test(x=dotplotDataAP5_Late[,1], y=dotplotDataAP5_Late[,2], paired=T) #V = 150, p=0.09195; pcorrected= 0.1839
+#Late AP5 DS: pre vs. post
+wilcox.test(x=dotPlotByGroupLate_DS_Tail$AP5[,1], y=dotPlotByGroupLate_DS_Tail$AP5[,2], paired=T, alternative = "greater") 
+#V = 1220, p-value = 0.005788; pcorrected= 2.0416e-01
 
-#Tail: DS pre VEH vs. NS pre VEH and DS post VEH vs. NS post VEH
-wilcox.test(x=dotPlotByGroupLate_DS_Tail$VEH[,1], y=dotPlotByGroupLate_NS_Tail$VEH[,1], paired=T) #V = 500, p-value = 0.5051; pcorrected=0.1839 
-wilcox.test(x=dotPlotByGroupLate_DS_Tail$VEH[,2], y=dotPlotByGroupLate_NS_Tail$VEH[,2], paired=T) #v=30; p=0.1094; pcorrected=0.1839 
+#Late VEH NS: pre vs. post
+wilcox.test(x=dotPlotByGroupLate_NS_Tail$VEH[,1], y=dotPlotByGroupLate_NS_Tail$VEH[,2], paired=T, alternative = "greater") 
+#V = 402, p-value = 0.9572; pcorrected=1
+
+#Late AP5 NS: pre vs. post
+wilcox.test(x=dotPlotByGroupLate_NS_Tail$AP5[,1], y=dotPlotByGroupLate_NS_Tail$AP5[,2], paired=T, alternative = "greater") 
+#V = 985, p-value = 0.2263; pcorrected= 1
+
+#Late VEH pre: DS vs. NS
+wilcox.test(x=dotPlotByGroupLate_DS_Tail$VEH[,1], y=dotPlotByGroupLate_NS_Tail$VEH[,1], paired=T, alternative = "greater") 
+#V = 500, p-value = 0.7508; pcorrected=5.0350e-09
+
+#Late AP5 pre: DS vs. NS
+wilcox.test(x=dotPlotByGroupLate_DS_Tail$AP5[,1], y=dotPlotByGroupLate_NS_Tail$AP5[,1], paired=T, alternative = "greater") 
+#V = 1364, p-value = 0.0001521; pcorrected=7.0000e-10
+
+#Late VEH post: DS vs. NS
+wilcox.test(x=dotPlotByGroupLate_DS_Tail$VEH[,2], y=dotPlotByGroupLate_NS_Tail$VEH[,2], paired=T, alternative = "greater") 
+#V = 414, p-value = 0.9441; pcorrected=2.7498e-09 
+
+#Late AP5 post: DS vs. NS
+wilcox.test(x=dotPlotByGroupLate_DS_Tail$AP5[,2], y=dotPlotByGroupLate_NS_Tail$AP5[,2], paired=T, alternative = "greater") 
+#V = 1355, p-value = 0.0001972; pcorrected=  1.4049e-09
 
 
-#Tail: DS pre AP5 vs. NS pre AP5 and DS post AP5 vs. NS post AP5
-wilcox.test(x=dotPlotByGroupLate_DS_Tail$AP5[,1], y=dotPlotByGroupLate_NS_Tail$AP5[,1], paired=T) #V = 260, p-value = 0.58381; pcorrected=0.1839 
-wilcox.test(x=dotPlotByGroupLate_DS_Tail$AP5[,2], y=dotPlotByGroupLate_NS_Tail$AP5[,2], paired=T) #V = 414, p-value = 0.1142; pcorrected=0.1839 
+p.adjust(p=c(0.3018, 0.005788, 0.9572, 0.2263, 0.7508, 0.0001521, 0.9441, 0.0001972), method="holm") 
+# 1.0000000 0.0347280 1.0000000 1.0000000 1.0000000 0.0012168 1.0000000 0.0013804
 
-
-p.adjust(p=c(0.1094, 0.1094, 0.5051, 0.1839, 0.5828, 0.1142), method="holm") #0.6564 0.6564 1.0000 0.6564 1.0000 0.6564
-
-
-#100-400ms
-save(dotPlotByGroupLate_DS_Spike, file=paste(dataForRdir, "dotPlotByGroupLate_DS_Spike.rdat", sep=""))
-save(dotPlotByGroupLate_NS_Spike, file=paste(dataForRdir, "dotPlotByGroupLate_NS_Spike.rdat", sep=""))
-
-wilcox.test(x=dotPlotByGroupLate_DS_Spike$VEH[,1], y=dotPlotByGroupLate_DS_Spike$VEH[,2], paired=T) #V = 257, p=0.000862; pcorrected=0.001724 
-wilcox.test(x=dotPlotByGroupLate_DS_Spike$AP5[,1], y=dotPlotByGroupLate_DS_Spike$AP5[,2], paired=T) #V = 1154, p-value = 0.05104; pcorrected= 5.1040e-02
-
-wilcox.test(x=dotPlotByGroupLate_DS_Spike$VEH[,1], y=dotPlotByGroupLate_NS_Spike$VEH[,1], paired=T) #V = 1065, p-value = 2.013e-09; pcorrected=6.0390e-09 
-wilcox.test(x=dotPlotByGroupLate_DS_Spike$VEH[,2], y=dotPlotByGroupLate_NS_Spike$VEH[,2], paired=T) #v=1072; p=9.166e-10; pcorrected=3.6664e-09  
-
-wilcox.test(x=dotPlotByGroupLate_DS_Spike$AP5[,1], y=dotPlotByGroupLate_NS_Spike$AP5[,1], paired=T) #V = 1731, p-value =  1.75e-10; pcorrected=1.0500e-09  
-wilcox.test(x=dotPlotByGroupLate_DS_Spike$AP5[,2], y=dotPlotByGroupLate_NS_Spike$AP5[,2], paired=T) #v=1714; p=4.014e-10; pcorrected=2.0070e-09 
-
-
-p.adjust(p=c(0.000862, 0.05104, 2.013e-09, 9.166e-10, 1.75e-10, 4.014e-10), method="holm")
-#] 1.7240e-03 5.1040e-02 6.0390e-09 3.6664e-09 1.0500e-09 2.0070e-09
 
 
 
@@ -1425,6 +1466,9 @@ contTable_LateAP5 <- t(data.frame(Pre=as.matrix(table(LateAP5PreInf_ExcUnits)), 
 
 chisq.test(contTable_LateVEH) #X-squared = 0, df = 1, p-value = 1
 chisq.test(contTable_LateAP5) #X-squared = 0.84965, df = 1, p-value = 0.3567
+
+fisher.test(contTable_LateVEH) #95 CI: 0.4123089 2.4253662, odds ratio=1, p=1
+fisher.test(contTable_LateAP5) #95 CI: 0.3012876 1.4609265, odds ratio=0.6664769, p=0.3567
 
 
 #Late VEH
