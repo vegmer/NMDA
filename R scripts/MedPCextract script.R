@@ -1,24 +1,34 @@
 ### FUNCTION THAT EXTRACTS AND SAVES THE FOLLOWING BEHAVIOR-RELATED DATA OBJECTS:
-# csacqidx -> index of all sessions with summary indices
-# alldata -> list of objects with detailed about relevant session events (each object corresponds to each session, the number of each object corresponds to the row of the same number in 'csacqidx')
-# rats -> unique names of all rats
-# idx -> list where each object corresponds to one rat (the object rats will tell you which rat). Inside each object, there is a vector with the indices of each one of that animal's sessions in csacqidx and alldata
+
+# a) In the "datafolder" folder:
+#       csacqidx -> index of all sessions with summary indices
+#       alldata -> list of objects with detailed about relevant session events (each object corresponds to each session, the number of each object corresponds to the row of the same number in 'csacqidx')
+#       rats -> unique names of all rats
+#       idx -> list where each object corresponds to one rat (the object rats will tell you which rat). Inside each object, there is a vector with the indices of each one of that animal's sessions in csacqidx and alldata
+
+# b) In the "dataForRCumulative" folder:
+# DSlatency -> on every S+ trial: latency to enter the compartment after S+ onset. If the animal didn't enter, a 10 (max. length of cue) was assigned. This is because the
+# task accuracy index (or "performance index") is based on ITIlatency-DSlatency and, to be able to do that, 10 is assigned when the animal doesn't respond. But if you're 
+# just interested in latency, then swith the values that equal 10 for NA.
 # DSrespAll -> every DS trial of every session: 1=responded to the cue; 0=ignored the cue
-# NSrespAll -> Same thing but of NSs
-# DStaskAcc -> How much faster was the animal to enter the rec. after the cue vs. during the ITI (average of 100 random 10s windows
-# NStaskAcc -> same but of NS
-# DStimeToSpare -> 10-latency to enter after DS onset
-# NStimeToSpare -> same but of NS
-#
-# The parameters are:
+# DStaskAcc -> How much faster was the animal to enter the rec. after the cue vs. during the last 10s of the ITI on that trial (ITIlatency or ITIpseudolatency)
+# DStimeToSpare -> opposite of DSlatency (10-latency to enter after DS onset)
+# ITIlatency -> also known as "ITI pseudolatency". Latency to enter into the compartment in the 10 s ITI window that precedes the cue.Note that, in this index, all trials are included (ITI windows that precede DSs and NSs. Further analyses break this down by cue)
+# NSlatency -> Same as DS latency but for NS (or S-) trials
+# NSrespAll -> Same thing as DS response ratio but for NS
+# NStaskAcc -> same as DS task accuracy but for NS (this is also known as "performance index")
+# NStimeToSpare -> same as DStimeToSpare but for NS trials
+# ITIrespRatio -> Whether the animal made an entry during the 10s ITI window that preceded the cue or not
+
+# The parameters of the function are:
 # "MovAvg" --> Select how to calculate the ITI pseudolatency. Options: "All", "No" or "Impinged only"
-#    a) "All":To each trial, assign the average ITI pseudolatency in the 5 trial window around it (5 trials before, 5 trials after and the actual trial); b) "No"
-#    b) "No": to each trial assign its own ITI pseudolatency
+#    a) "All":To each trial, assign the average ITI pseudolatency in the 5 trial window around it (5 trials before, 5 trials after and the actual trial); 
+#    b) "No": to each trial assign its own ITI pseudolatency, whatever it is. If the animal was already inside the receptacle when the ITI window started, it won't count that. It will only count the first "active" entry after the beginning of the ITI period.
 #    c) "Impinged only": In trials in which the animal's head was already inside at the time the ITI pseudolatency period started, assign the moving average of the 5 trial window around that trial. If the head of the animal was not inside at that time, just assign the ITI pseudolatency value of that trial.
-# "funcdirect" --> the folder where to find the functions that are called by the function
-# "datafolder" --> the folder with the MedPC files
-# "dataForRdir" --> the folder where the function is going to store the objects it creates
-# "dataForRCumulative" --> the folder where the functino is going to store objects that I will later use for cumulative performance graphs
+# "funcdirect" -->  folder where the functions that are called by the function are
+# "datafolder" -->  folder with the MedPC files
+# "dataForRdir" -->  folder where the function is going to store the objects it creates
+# "dataForRCumulative" -->  folder where the function is going to store objects that will be used later for cumulative performance graphs (trial by trial performance by animal in different indices)
 # "cuelength" --> length of the cue in case the animal doesn't make an entry (in seconds)
 
 MedPCextract <- function(MovAvg="Impinged only", funcdirect=funcdirect, datafolder=datafolder, 
