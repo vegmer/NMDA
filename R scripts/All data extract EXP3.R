@@ -31,6 +31,7 @@ dataForRCumulative <- paste(getwd(), "/EXP3_NAc FR acquisition/Data for R cumula
 behGraphFolder <- paste(getwd(), "/EXP3_NAc FR acquisition/Graphs/Behavior/", sep="")
 CPfuncFolder <- paste(getwd(), '/Change_Point-master/', sep="")
 CPGraphFolder <- paste(getwd(), "/EXP3_NAc FR acquisition/Graphs/Behavior/Change point/", sep="")
+rasterGraphFolder <- paste(behGraphFolder, "/Rasters/", sep="")
 MixedGraphFolder <- paste(getwd(), "/EXP3_NAc FR acquisition/Graphs/Mixed/", sep="")
 neuGraphFolder <- paste(getwd(), "/EXP3_NAc FR acquisition/Graphs/Neuronal/", sep="")
 otherGraphFolder <- paste(getwd(), "/EXP3_NAc FR acquisition/Graphs/Others/", sep="")
@@ -50,6 +51,7 @@ load(file=paste(funcdirect, "cumulativeIndGraphs.R", sep=""))
 load(file=paste(funcdirect, "PerformanceFromCP.R", sep=""))
 load(file=paste(funcdirect, "PrePostCP_Perf.R", sep=""))
 load(file=paste(funcdirect, "avgPerfByBin.R", sep=""))
+load(file=paste(funcdirect, "behRASTERS.R", sep=""))
 load(file=paste(funcdirect, "CPextractMultipleCrit.R", sep=""))
 load(file=paste(funcdirect, "neuralhist.r", sep=""))
 load(file=paste(funcdirect, "FRbyNEURONbyBINcue.r", sep=""))
@@ -75,6 +77,7 @@ load(file=paste(funcdirect, "plotBoxplotPrePostCP.R", sep=""))
 load(file=paste(funcdirect, "compareBins.R", sep=""))
 load(file=paste(funcdirect, "compareDSvsNSfromCP.R", sep=""))
 
+
 #### GENERATE IMPORTANT DATA OBJECTS
 MedPCextract(MovAvg="Impinged only", funcdirect = funcdirect, datafolder = datafolder, 
              dataForRdir = dataForRdir, dataForRCumulative=dataForRCumulative, cuelength=10)
@@ -89,9 +92,18 @@ for(i in 1:length(filesCum)){load(filesCum[[i]])}
 #### BEHAVIORAL GRAPHS
 
 # RASTERS
-load(file=paste(funcdirect, "MAKERASTER.r", sep=""))
-MAKERASTER(i=x, data=alldata, idxdata=csacqidx)
-MAKERASTER(i=4, data=alldata, idxdata=csacqidx)
+#This function makes all of the possible combination of rasters for all rats and all days
+sapply(seq(1, length(rats)), function(x){
+        sapply(seq(1, 6), function(y){
+                sapply(seq(1, 2), function(z){
+                        if(z==1){comboPick="FALSE"}
+                        if(z==2){comboPick="TRUE"}
+                        behRASTERS(subject = rats[x], day = y, lowerLimit=20, upperLimit=20, combined=comboPick, graphFolder=rasterGraphFolder)
+                        
+                })
+        })
+})
+
 
 
 ###
@@ -104,12 +116,12 @@ avgPerfByBin(binsize=5, colors=c("gray20", "gray50"), data=list(DStaskAcc, NStas
              cues=c("S+", "S-"), index="Specificity", legendLocation="topleft", y_axis_label="Performance index", 
              behGraphFolder=behGraphFolder, plot=T)
         
-avgPerfByBin(binsize=5, colors=c("gray20", "gray50"), data=list(DSrespAll, NSrespAll), 
+RR <- avgPerfByBin(binsize=5, colors=c(colindx[1], "darkblue"), data=list(DSrespAll, NSrespAll), 
              cues=c("S+", "S-"), index="Response ratio", legendLocation="topleft", y_axis_label="Response ratio", 
              behGraphFolder=behGraphFolder, plot=T)
 
-avgPerfByBin(binsize=5, colors=c("gray20", "gray50"), data=list(DSlatency, NSlatency), 
-             cues=c("S+", "S-"), index="Latency", legendLocation="bottomright", y_axis_label="Latency (s)", 
+Lat <- avgPerfByBin(binsize=5, colors=c(colindx[1], "darkblue", "gray30"), data=list(DSlatency, NSlatency, ITIlatency), 
+             cues=c("S+", "S-", "ITI"), index="Latency", legendLocation="bottomright", y_axis_label="Latency (s)", 
              behGraphFolder=behGraphFolder, plot=T)
 
 avgPerfByBin(binsize=5, colors=c("gray20", "gray50"), data=list(ITIlatency), 

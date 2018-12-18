@@ -1,7 +1,7 @@
 avgPerfByBin <- function(binsize=10, colors=c("gray20", "gray50"), YMIN=NA, YMAX=NA, 
                          data=list(DStaskAcc, NStaskAcc), cues=c("S+", "S-"), 
                          index="Performance index", legendLocation="topleft", y_axis_label, 
-                         behGraphFolder=behGraphFolder, limit=210, plot=T){
+                         behGraphFolder=behGraphFolder, limit=240, plot=T){
         
         forPlotDF <- lapply(seq(1, length(data)), function(x){ #For each index I am interested in
                 
@@ -95,6 +95,7 @@ avgPerfByBin <- function(binsize=10, colors=c("gray20", "gray50"), YMIN=NA, YMAX
                 dev.off()
         }
         
+        print(forPlotDF)
 }
 
 
