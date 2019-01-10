@@ -1,6 +1,6 @@
 
 #############################################################
-### EXPERIMENT 3: NO INFUSIONS, SWITCH SHORT TO LONG ITI  ###
+### EXPERIMENT 4: UNILATERAL INFUSIONS, NON-LEARNERS      ###
 #############################################################
 
 ### LOAD IMPORTANT LIBRARIES
@@ -86,19 +86,19 @@ MAKERASTER(i=4, data=alldata, idxdata=csacqidx)
 ###
 
 #AVERAGE PERFORMANCE S+ VS S-. 5 trial bins.
-avgPerfByBin(binsize=10, colors=c("gray20", "gray50"), data=list(DStaskAcc, NStaskAcc), 
+avgPerfByBin(binsize=5, colors=c("gray20", "gray50"), data=list(DStaskAcc, NStaskAcc), 
              cues=c("S+", "S-"), index="Specificity", legendLocation="topleft", y_axis_label="Performance index", 
              behGraphFolder=behGraphFolder, plot=T)
         
-avgPerfByBin(binsize=10, colors=c("gray20", "gray50"), data=list(DSrespAll, NSrespAll), 
+avgPerfByBin(binsize=5, colors=c(colindx[1], "darkblue", "gray40"), data=list(DSrespAll, NSrespAll, ITIrespRatio), 
              cues=c("S+", "S-"), index="Response ratio", legendLocation="topleft", y_axis_label="Response ratio", 
              behGraphFolder=behGraphFolder, plot=T)
 
-avgPerfByBin(binsize=10, colors=c("gray20", "gray50"), data=list(DSlatency, NSlatency), 
+avgPerfByBin(binsize=5, colors=c("gray20", "gray50"), data=list(DSlatency, NSlatency), 
              cues=c("S+", "S-"), index="Latency", legendLocation="bottomright", y_axis_label="Latency (s)", 
              behGraphFolder=behGraphFolder, plot=T)
 
-avgPerfByBin(binsize=10, colors=c("gray20", "gray50"), data=list(ITIlatency), 
+avgPerfByBin(binsize=5, colors=c("gray20", "gray50"), data=list(ITIlatency), 
              cues=c("ITI"), index="Latency", legendLocation=-1, y_axis_label="Latency (s)", 
              behGraphFolder=behGraphFolder, plot=T)
 

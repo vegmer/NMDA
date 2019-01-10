@@ -4,7 +4,7 @@ PerformanceFromCP <- function(relTrialMin=-100, relTrialMax=100, trialBinSize=5,
                               csacqidx=csacqidx, idx=idx, rats=rats, alldata=alldata, color="black"){
         
         #Names for graph titles. Make sure they are in the same order that these objects are loaded from the folder in the next line
-        longNames <- c("S+ latency", "S+ resp ratio", "S+ specificity", "S+ time to spare", "ITI latency", "S- latency", "S- resp ratio", "S- specificity", "S- time to spare")
+        longNames <- c("S+ latency", "S+ resp ratio", "S+ specificity", "S+ time to spare", "ITI latency", "ITI response ratio", "S- latency", "S- resp ratio", "S- specificity", "S- time to spare")
         
         # Load relevant objects and create object 'cumData' with the labels for each object
         filesCum <- paste(dataForRCumulative, list.files(dataForRCumulative), sep=""); cumData <- sapply(seq(1, length(filesCum)), function(i){load(filesCum[[i]])})
@@ -19,9 +19,8 @@ PerformanceFromCP <- function(relTrialMin=-100, relTrialMax=100, trialBinSize=5,
                 
                 #Make a list of vectors (one per animal) with trial number relative to change point
                 
-                
-                #If my data object is ITI latency, that object includes ITIs before NS and DS. I'll choose the DS only
-                if(j==5){data <- lapply(seq(1, length(data)), function(k){
+                #If my data object is ITI latency or ITI response ratio, that object includes ITIs before NS and DS. I'll choose the DS only
+                if(j==5 | j==6){data <- lapply(seq(1, length(data)), function(k){
                         ratSess <- idx[[k]]
                         ITIcueKind <- do.call("c", lapply(seq(1, length(ratSess)), function(l){
                                 alldata[[ratSess[l]]]$orderCues
@@ -46,8 +45,8 @@ PerformanceFromCP <- function(relTrialMin=-100, relTrialMax=100, trialBinSize=5,
                 #Window of trials around CP
                 trialVals <- relTrialMin:relTrialMax
                 
-                if(imgFormat=="png"){filetitle=paste(graphFolder, paste(longNames[j]), "relative to CP",".png", sep=""); png(filename = filetitle)}
-                if(imgFormat=="pdf"){filetitle=paste(graphFolder, paste(longNames[j]), "relative to CP" ,".pdf", sep=""); pdf(file = filetitle)}
+                #if(imgFormat=="png"){filetitle=paste(graphFolder, paste(longNames[j]), "relative to CP",".png", sep=""); png(filename = filetitle)}
+                #if(imgFormat=="pdf"){filetitle=paste(graphFolder, paste(longNames[j]), "relative to CP" ,".pdf", sep=""); pdf(file = filetitle)}
                 
                 perfRelCPInd <- sapply(seq(1, length(trialVals)), function(l){
                         
@@ -122,8 +121,5 @@ PerformanceFromCP <- function(relTrialMin=-100, relTrialMax=100, trialBinSize=5,
 }
 
 
-
-save(PerformanceFromCP, file="E:/Dropbox/NMDA/EXP3_NAc FR acquisition/R functions/PerformanceFromCP.R")
-save(PerformanceFromCP, file="E:/Dropbox/NMDA/EXP4_Unilateral AP5/R functions/PerformanceFromCP.R")
 save(PerformanceFromCP, file="E:/Dropbox/NMDA/R functions/PerformanceFromCP.R")
 

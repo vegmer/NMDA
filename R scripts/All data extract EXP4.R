@@ -1,6 +1,6 @@
 
 #############################################################
-### EXPERIMENT 3: NO INFUSIONS, SWITCH SHORT TO LONG ITI  ###
+### EXPERIMENT 4: UNILATERAL INFUSIONS, SHORT ITI         ###
 #############################################################
 
 ### LOAD IMPORTANT LIBRARIES
@@ -222,7 +222,7 @@ mtext(side=2, text="Total # rewards", line=2.5, font=2, cex=1.4)
 axis(side=1, at=c(0.5, 1.5), labels=c("Total rewards", "# rewards with < 2 latency"), font=2, cex.axis=1.2)
 
 
-#lEARNERS: TOTAL TRIALS TO CP VS. NUMBER OF REWARDS
+#LEARNERS: TOTAL TRIALS TO CP VS. NUMBER OF REWARDS
 plot.new()
 plot.window(xlim=c(0, 2), ylim=c(0, 216))
 
@@ -284,9 +284,12 @@ PerformanceFromCP(relTrialMin=-100, relTrialMax=100, trialBinSize=5, typegraph="
                   dataForRCumulative=dataForRCumulative, dataForRdir=dataForRdir, graphFolder=PerfRelToCPFolder, CPdata=CPdata, 
                   idx=idx, rats = rats, alldata = alldata)
 
+PerformanceFromCP(relTrialMin=-100, relTrialMax=100, trialBinSize=5, typegraph="both", imgFormat="pdf", 
+                  dataForRCumulative=dataForRCumulative, dataForRdir=dataForRdir, graphFolder=PerfRelToCPFolder, CPdata=CPdata, 
+                  idx=idx, rats = rats, alldata = alldata)
+
 
 #PRE CP VS. POST CP PERFORMANCE
-
 PrevsPostFolder <- paste(PerfRelToCPFolder, "Average Pre vs Post/", sep="")
 PrePostCP_Perf(data=DSrespAll, CP=CPdata$CP, y_axis_label="S+ response ratio", graphFolder=PrevsPostFolder, plot=T) #t = -5.0607, df = 10, p-value = 0.0004914 No correction
 PrePostCP_Perf(data=NSrespAll, CP=CPdata$CP, y_axis_label="S- response ratio", graphFolder=PrevsPostFolder, plot=T) #t = 0.82127, df = 10, p-value =  0.4306
@@ -295,6 +298,8 @@ PrePostCP_Perf(data=NSlatency, CP=CPdata$CP, y_axis_label="S- latency", graphFol
 PrePostCP_Perf(data=DStaskAcc, CP=CPdata$CP, y_axis_label="S+ specificity", graphFolder=PrevsPostFolder, plot=T) #t = -10.21, df = 10, p-value = 1.313e-06
 PrePostCP_Perf(data=NStaskAcc, CP=CPdata$CP, y_axis_label="S- specificity", graphFolder=PrevsPostFolder, plot=T) #t = 0.42843,, df = 10, p-value =  0.6774
 PrePostCP_Perf(data=ITIlatency, CP=CPdata$CP, y_axis_label="ITI latency", graphFolder=PrevsPostFolder, plot=T) #t = 1.2465, df = 10, p-value = 0.241
+
+
 
 p.adjust(c(0.0004914, 0.0001435, 1.313e-06,  0.241), method="holm") #9.828e-04 4.305e-04 5.252e-06 2.410e-01
 
@@ -510,11 +515,12 @@ plotFRandCP(experiment="Exp 4 BOTH SIDES Cue exc only", cue=c("S+", "S-", "S+", 
             yAxMinZ = -1, yAxMaxZ = 10, yAxMaxRaw = 10, neudata=allNeuronsDS_VEH)
 
 plotFRandCP(experiment="Exp 4 both sides", cue=c("S+", "S+"), masterDF=list(masterDF_DS_VEH, masterDF_DS_AP5), 
-            graphFolder=MixedGraphFolder, trialBinSize=5, WdwStart=0, WdwEnd=400, dataProcess="Zscores", correctOnly=FALSE, 
+            graphFolder=MixedGraphFolder, trialBinSize=5, WdwStart=100, WdwEnd=400, dataProcess="Zscores", correctOnly=FALSE, 
             colindx =c(colindx[1],colindx[2]), legLabels=c("S+ VEH", "S+ AP5"), capped=T, capValue = c(-90, 90), 
             yAxMinZ = -1, yAxMaxZ = 8, yAxMaxRaw = 10, neudata=allNeuronsDS_VEH)
 
 
+#### 35 TRIAL BINS: PERCENTAGE OF CUE-EVOKED EXCITATIONS
 #% Exc. The function doesn't work well, I have to run the parameters first and then go to the function and run its contents. Fix this.
 PercCueExc_VEH <-  plotFRandCP(experiment="Exp 4 VEH side", cue=c("S+"), masterDF=list(masterDF_DS_VEH), 
                                graphFolder=MixedGraphFolder, trialBinSize=35, WdwStart=100, WdwEnd=400, 
@@ -794,6 +800,306 @@ VEHcomps.pval.adj <- giveStars(c( 1.11568e-02, 2.44260e-03, 5.95800e-07, 1.00000
 AP5comps.pval.adj <- giveStars(c( 8.81320e-01, 8.81320e-01, 4.61250e-02, 1.00000e+00))
 VEHvsAP5compsEXC.pval.adj <- giveStars(c(1.00000e+00, 8.36760e-01, 1.27176e-01, 2.98010e-03, 6.42010e-04, 1.99420e-01))
 VEHvsAP5compsINH.pval.adj <- giveStars(c(1.00000e+00, 1.00000e+00, 1.00000e+00, 9.18900e-01, 9.18900e-01, 1.00000e+00))
+
+
+
+
+
+
+
+###########################
+#### 20 TRIAL BINS: PERCENTAGE OF CUE-EVOKED EXCITATIONS
+#% Exc. The function doesn't work well, I have to run the parameters first and then go to the function and run its contents. Fix this.
+PercCueExc_VEH_20 <-  plotFRandCP(experiment="Exp 4 VEH side", cue=c("S+"), masterDF=list(masterDF_DS_VEH), 
+                               graphFolder=MixedGraphFolder, trialBinSize=20, WdwStart=100, WdwEnd=400, 
+                               dataProcess="PercCueExc", correctOnly=FALSE, colindx =c(colindx[1]), 
+                               legLabels=c("S+"), capped=T, capValue = c(-100, 100), yAxMinZ = -1, yAxMaxZ = 8, 
+                               yAxMaxRaw = 10, neudata=allNeuronsDS_VEH)
+# [[1]]
+# bin trialBins CueEx notCueExc CueInh notCueInh
+# 1    1      -100    18        54     27        45
+# 2    2       -80    41        87     35        93
+# 3    3       -60    29        43     11        61
+# 4    4       -40    63        63     21       105
+# 5    5       -20    38        31     13        56
+# 6    6         0    86        44     20       110
+# 7    7        20    53        21     11        63
+# 8    8        40    56        17      9        64
+# 9    9        60    23        12      6        29
+# 10  10        80     8         8      2        14
+
+
+PercCueExc_AP5_20 <- plotFRandCP(experiment="Exp 4 AP5 side 20", cue=c("S+"), masterDF=list(masterDF_DS_AP5), graphFolder=MixedGraphFolder, 
+                              trialBinSize=20, WdwStart=100, WdwEnd=400, dataProcess="PercCueExc", correctOnly=FALSE, 
+                              colindx =c(colindx[2]), legLabels=c("S+"), capped=T, capValue = c(-100, 100), 
+                               yAxMinZ = -1, yAxMaxZ = 8, yAxMaxRaw = 10, neudata=allNeuronsDS_AP5)
+# [[1]]
+# bin trialBins CueEx notCueExc CueInh notCueInh
+# 1    1      -100    13        43     16        40
+# 2    2       -80    23        74     30        67
+# 3    3       -60    16        49     20        45
+# 4    4       -40    30        69     26        73
+# 5    5       -20    20        32     11        41
+# 6    6         0    43        58     24        77
+# 7    7        20    23        32     13        42
+# 8    8        40    34        46     18        62
+# 9    9        60    30        39     17        52
+# 10  10        80    22        23     11        34
+# # 
+
+PercCueExc_VEH_20 <- PercCueExc_VEH_20[[1]]
+PercCueExc_AP5_20 <- PercCueExc_AP5_20[[1]]
+
+save(PercCueExc_VEH_20, file=paste(dataForRdir, "PercCueExc_VEH.rdat", sep=""))
+save(PercCueExc_AP5_20, file=paste(dataForRdir, "PercCueExc_AP5.rdat", sep=""))
+
+#Is the proportion of cue-exc neurons modulated by a) the drug; b) the amount of training? (run a different chi.sq test for bins 1, 3 and 5 and for bins 2, 4 and 6, that way the units on each cell will be independent for sure)
+#For Chi-sq analysis. I need to make sure that each cell has a completely different population of neurons. Bc each session has 40 trials of each kind, by only comparing bins that are separated by 40 trials I can guarantee that.
+
+
+### VEH SIDE
+contingency_table_comp1<- PercCueExc_VEH_20[is.even(PercCueExc_VEH_20$bin)==FALSE, c(2, 3, 4)]
+contingency_table_comp2 <-  PercCueExc_VEH_20[is.even(PercCueExc_VEH_20$bin)==TRUE, c(2, 3, 4)]
+
+inhCont_table_comp1 <- PercCueExc_VEH_20[is.even(PercCueExc_VEH_20$bin)==FALSE, c(2, 5, 6)]
+inhCont_table_comp2 <- PercCueExc_VEH_20[is.even(PercCueExc_VEH_20$bin)==TRUE, c(2, 5, 6)]
+
+#Chi-sq analysis excitations:
+#Bins 1, 3, 5, 7 and 9
+critData <- contingency_table_comp1[, -1]
+chisq.test(x=critData)
+# Pearson's Chi-squared test
+# 
+# data:  critData
+# X-squared = 38.727, df = 4, p-value = 7.931e-08
+
+fisher.test(critData)
+# data:  critData
+# p-value = 4.798e-08
+# alternative hypothesis: two.sided
+
+
+
+#Bins 2, 4, 6, 8 and 10
+critData <- contingency_table_comp2[,-1 ]
+chisq.test(x=critData)
+# Pearson's Chi-squared test
+# 
+# data:  critData
+# X-squared = 48.612, df = 4, p-value = 7.034e-10
+
+fisher.test(critData)
+# data:  critData
+# p-value = 5.577e-08
+# alternative hypothesis: two.sided
+
+
+
+#Post-hoc comparisons for % cue-excited units
+# Is the distribution of exc/not exc neurons different from the first and the third bin (for example). 
+contTableExc_VEH_20 <- PercCueExc_VEH_20[ , c(3, 4)]
+
+#Bin 2 vs. 5
+fisher.test(contTableExc_VEH_20[c(2, 5), ], alternative="less") #95% CI: 0.000000  0.6672858 Odds ratio=0.3864282 p=0.00141
+ #Bin 5 vs. 8
+fisher.test(contTableExc_VEH_20[c(5, 8), ], alternative="less") #95% CI:0.0000000 0.7243426 odds ratio=0.374803 p= 0.005289
+
+#Correct p value all comparisons
+p.adjust(p=c(0.00141, 0.005289), method="holm")
+#  0.002820 0.005289
+
+
+contTableInh_VEH_20 <- PercCueExc_VEH_20[ , c(5, 6)]
+
+#Bin 2 vs. 5
+fisher.test(contTableInh_VEH_20[c(2, 5), ], alternative="greater") #95% CI:0.8437931      Inf Odds ratio=1.617342 p=0.1239
+#Bin 5 vs. 8
+fisher.test(contTableInh_VEH_20[c(5, 8), ], alternative="greater") #95% CI:0.6915767 Inf odds ratio= 1.64495  p-val = 0.2006
+
+
+
+### AP5 SIDE
+contingency_table_comp1<- PercCueExc_AP5_20[is.even(PercCueExc_AP5_20$bin)==FALSE, c(2, 3, 4)]
+contingency_table_comp2 <-  PercCueExc_AP5_20[is.even(PercCueExc_AP5_20$bin)==TRUE, c(2, 3, 4)]
+
+inhCont_table_comp1 <- PercCueExc_AP5_20[is.even(PercCueExc_AP5_20$bin)==FALSE, c(2, 5, 6)]
+inhCont_table_comp2 <- PercCueExc_AP5_20[is.even(PercCueExc_AP5_20$bin)==TRUE, c(2, 5, 6)]
+
+#Chi-sq analysis excitations:
+#Bins 1, 3 and 5
+critData <- contingency_table_comp1[, -1]
+chisq.test(x=critData)
+# Pearson's Chi-squared test
+# 
+# data:  critData
+# X-squared = 10.111, df = 4, p-value = 0.03859
+
+fisher.test(critData) #p-value = 0.03694
+
+#Bins 2, 4, 6, and 8
+critData <- contingency_table_comp2[,-1 ]
+chisq.test(x=critData)
+# Pearson's Chi-squared test
+# 
+# data:  critData
+# X-squared = 14.355, df = 4, p-value = 0.006244
+
+fisher.test(x=critData) #p-value = 0.005615
+
+
+#Post-hoc comparisons for % cue-excited units
+# Is the distribution of exc/not exc neurons different from the first (-120 to -80) and the third (-40 to 0) bin. 
+contTableExc_AP5_20 <- PercCueExc_AP5_20[ , c(3, 4)]
+
+#Bin 2 vs. 5
+fisher.test(contTableExc_AP5_20[c(2, 5), ], alternative="less") #95% CI: 0.000000 0.9821509 Odds ratio=0.499756 p= 0.0452
+#Bin 5 vs. 8
+fisher.test(contTableExc_AP5_20[c(5, 8), ], alternative="less") #95% CI:0.0000000 1.631982 odds ratio=0.8466628 p= 0.3907
+
+#Correct p value all comparisons
+p.adjust(p=c( 0.0452, 0.3907), method="holm")
+# 0.0904 0.39070
+
+
+
+#Chi-sq for inhibitions:
+#Bins 1, 3 and 5
+critData <- inhCont_table_comp1[,-1 ]
+chisq.test(x=critData)
+# Pearson's Chi-squared test
+# 
+# data:  critData
+# X-squared = 1.8244, df = 4, p-value = 0.768
+
+fisher.test(critData) #p-value = 0.7779
+
+
+#Bins 2, 4 and 6
+critData <- inhCont_table_comp2[,-1 ]
+chisq.test(x=critData)
+# Pearson's Chi-squared test
+# 
+# data:  critData
+# X-squared = 2.059, df = 4, p-value = 0.7249
+# 
+
+fisher.test(x=critData) #p-value = 0.7397
+
+contTableInh_AP5_20 <- PercCueExc_AP5_20[ , c(5, 6)]
+
+
+#Bin 2 vs. 5
+fisher.test(contTableInh_AP5_20[c(2, 5), ], alternative="greater") #95% CI: 0.8063394       Inf Odds ratio=1.663381 p= 0.1395
+#Bin 5 vs. 8
+fisher.test(contTableInh_AP5_20[c(5, 8), ], alternative="greater") #95% CI:  0.4104399  Inf odds ratio=0.9246439 p= 0.6516
+
+
+
+#########
+
+### % CUE EXCITED
+### VEH VS AP5
+#Bin 1: VEH vs. AP5
+fisher.test(rbind(contTableExc_VEH_20[1, ], contTableExc_AP5_20[1, ]), alternative="less") #95% CI: 0.000000 2.393145  Odds ratio=1.101717 p= 0.6692
+
+#Bin 2: VEH vs. AP5
+fisher.test(rbind(contTableExc_VEH_20[2, ], contTableExc_AP5_20[2, ]), alternative="greater") #95% CI: 0.8820046 inf Odds ratio=1.513451 p= 0.1107
+
+#Bin 3: VEH vs. AP5
+fisher.test(rbind(contTableExc_VEH_20[3, ], contTableExc_AP5_20[3, ]), alternative="greater") #95% CI: 1.047456 inf Odds ratio=2.054446 p= 0.03813
+
+#Bin 4: VEH vs. AP5
+fisher.test(rbind(contTableExc_VEH_20[4, ], contTableExc_AP5_20[4, ]), alternative="greater") #95% CI: 1.393957 inf Odds ratio=2.291379  p= 0.002132
+
+#Bin 5: VEH vs. AP5
+fisher.test(rbind(contTableExc_VEH_20[5, ], contTableExc_AP5_20[5, ]), alternative="greater") #95% CI: 0.99437 inf Odds ratio=1.950252 p=  0.05162
+
+#Bin 6: VEH vs. AP5
+fisher.test(rbind(contTableExc_VEH_20[6, ], contTableExc_AP5_20[6, ]), alternative="greater") #95% CI: 1.770777 inf Odds ratio=3.474471 p= 0.0002758
+
+#Bin 7: VEH vs. AP5
+fisher.test(rbind(contTableExc_VEH_20[7, ], contTableExc_AP5_20[7, ]), alternative="greater") #95% CI: 1.770777 inf Odds ratio=3.474471  p= 0.0006186
+
+#Bin 8: VEH vs. AP5
+fisher.test(rbind(contTableExc_VEH_20[8, ], contTableExc_AP5_20[8, ]), alternative="greater") #95% CI: 2.336163 inf Odds ratio=4.409919  p=  1.446e-05
+
+#Bin 9: VEH vs. AP5
+fisher.test(rbind(contTableExc_VEH_20[9, ], contTableExc_AP5_20[9, ]), alternative="greater") #95% CI: 1.130981 inf Odds ratio=2.469474 p= 0.02598
+
+#Bin 10: VEH vs. AP5
+fisher.test(rbind(contTableExc_VEH_20[10, ], contTableExc_AP5_20[10, ]), alternative="greater") #95% CI: 0.3435645 inf Odds ratio=1.044715 p= 0.5845
+
+
+p.adjust(p=c(0.6692, 0.1107, 0.03813, 0.002132, 0.05162, 0.0002758, 0.0006186, 1.446e-05, 0.02598, 0.5845))
+# 1.0000000 0.3321000 0.1906500 0.0149240 0.2064800 0.0024822 0.0049488 0.0001446 0.1558800 1.0000000
+
+giveStars(p.adjust(p=c(0.6692, 0.1107, 0.03813, 0.002132, 0.05162, 0.0002758, 0.0006186, 1.446e-05, 0.02598, 0.5845), method="holm"))
+
+
+
+### % CUE INHIBITED
+### VEH VS AP5
+#Bin 1: VEH vs. AP5
+fisher.test(rbind(contTableInh_VEH_20[1, ], contTableInh_AP5_20[1, ]), alternative="greater") 
+#95% CI: 0.7490693 Inf  Odds ratio=1.495257 p= 0.1918
+
+#Bin 2: VEH vs. AP5
+fisher.test(rbind(contTableInh_VEH_20[2, ], contTableInh_AP5_20[2, ]), alternative="less") 
+#95% CI: 0.00000 1.42798 Odds ratio=0.8411593 p= 0.3296
+
+#Bin 3: VEH vs. AP5
+fisher.test(rbind(contTableInh_VEH_20[3, ], contTableInh_AP5_20[3, ]), alternative="less") 
+#95% CI: 0.0000000 0.8789947 Odds ratio=0.4084578 p= 0.02481
+
+#Bin 4: VEH vs. AP5
+fisher.test(rbind(contTableInh_VEH_20[4, ], contTableInh_AP5_20[4, ]), alternative="less") 
+#95% CI: 0.00000 1.01832 Odds ratio=0.4084578  p= 0.02481
+
+#Bin 5: VEH vs. AP5
+fisher.test(rbind(contTableInh_VEH_20[5, ], contTableInh_AP5_20[5, ]), alternative="less") 
+#95% CI: 0.000000 2.043556 Odds ratio=0.8663043 p=  0.4633
+
+#Bin 6: VEH vs. AP5
+fisher.test(rbind(contTableInh_VEH_20[6, ], contTableInh_AP5_20[6, ]), alternative="less") 
+#95% CI: 0.000000 1.071944 Odds ratio=0.5847401 p= 0.07538
+
+#Bin 7: VEH vs. AP5
+fisher.test(rbind(contTableInh_VEH_20[7, ], contTableInh_AP5_20[7, ]), alternative="less") 
+#95% CI: 0.000000 1.314831 Odds ratio=0.5666588  p=  0.1499
+
+#Bin 8: VEH vs. AP5
+fisher.test(rbind(contTableInh_VEH_20[8, ], contTableInh_AP5_20[8, ]), alternative="less") 
+#95% CI: 0.000000 1.089567 Odds ratio=0.4866311 p=  0.07472
+
+#Bin 9: VEH vs. AP5
+fisher.test(rbind(contTableInh_VEH_20[9, ], contTableInh_AP5_20[9, ]), alternative="less") 
+#95% CI: 0.000000 1.659497 Odds ratio=0.635533 p= 0.2712
+
+#Bin 10: VEH vs. AP5
+fisher.test(rbind(contTableInh_VEH_20[10, ], contTableInh_AP5_20[10, ]), alternative="less") 
+#95% CI: 0.000000 2.005612 Odds ratio=0.4468194 p= 0.2667
+
+
+
+# 
+# #Correct p value of ALL comparisons:
+# VEHcomps.pval <- c(0.0006973, 0.0001357, 2.979e-08, 0.6879)
+# AP5comps.pval <-  c(0.08469, 0.08012, 0.003075, 0.2676)
+# VEHvsAP5compsEXC.pval <- c(0.7807, 0.06973, 0.009084, 0.0001753, 3.379e-05, 0.01534)
+# VEHvsAP5compsINH.pval <- c(0.3848, 0.3052, 0.1769, 0.1021, 0.1103, 0.2048)
+# 
+# p.adjust(p=c(VEHcomps.pval, AP5comps.pval, VEHvsAP5compsEXC.pval, VEHvsAP5compsINH.pval), method="holm")
+# 
+# VEHcomps.pval.adj <- giveStars(c( 1.11568e-02, 2.44260e-03, 5.95800e-07, 1.00000e+00))
+# AP5comps.pval.adj <- giveStars(c( 8.81320e-01, 8.81320e-01, 4.61250e-02, 1.00000e+00))
+# VEHvsAP5compsEXC.pval.adj <- giveStars(c(1.00000e+00, 8.36760e-01, 1.27176e-01, 2.98010e-03, 6.42010e-04, 1.99420e-01))
+# VEHvsAP5compsINH.pval.adj <- giveStars(c(1.00000e+00, 1.00000e+00, 1.00000e+00, 9.18900e-01, 9.18900e-01, 1.00000e+00))
+# 
+
+
+
+
+
 
 
 ###########################
@@ -1414,6 +1720,7 @@ megaplot(data=list(allNeuronsDSresponded_VEH, allNeuronsDSmissed_VEH, allNeurons
 megaplot(data=list(allNeuronsDS_VEH, allNeuronsNS_VEH), CPdata=CPdata, csacqidx=csacqidx, BLwdw=2, winmin=0, winmax=400,
          colpalette="Rainbow", minFR=-2, maxFR=6, graphFolder=MixedGraphFolder, dataForRdir=dataForRdir,
          ZcolLabels=c("ZDS", "ZNS"), arrangeBy="ZDS")
+
 load(file=paste(dataForRdir, "toplot.rdat", sep=""))
 toplotVEH <- toplot
 
@@ -1706,3 +2013,331 @@ PostCueFR_DSvsNS_fromCP_AP5_BySess$sig <- giveStars(PostCueFR_DSvsNS_fromCP_AP5_
  
 cumulative_CP(Exp="Exp4 AP5", CPdata=CPdata, numSess=6, byAnimal=F, byNeuron=T, 
               nexdata=allNeuronsDS_AP5$nexdata, graphFolder=MixedGraphFolder)
+
+
+
+
+
+
+
+##########################################################################
+### 20 TRIAL BINS
+##########################################################################
+
+#Post cue VEH
+VEH_20bin <- plotFRBoxPlotandCP(cue=c("S+", "S-"), experiment="Exp 4 VEH", 
+                                masterDF=list(masterDF_DS_VEH, masterDF_NS_VEH), 
+                                graphFolder=MixedGraphFolder, trialBinSize=20, WdwStart=100, WdwEnd=400, 
+                                dataProcess="Zscores", correctOnly=FALSE, points=F, lines=F, 
+                                color=c(colindx[1], colindxB[1]), legLabels=c("S+", "S-"), 
+                                yAxMinZ=-1, yAxMaxZ=8, yAxMaxRaw=7, capped=T, 
+                                capValue=c(-120, 120), cueExcOnly=F, neudata=allNeuronsDS_VEH)
+
+
+uniqueBin <- unique(VEH_20bin[[1]]$bin)
+
+Diff_DSNS_VEH_20bins <- do.call("rbind", lapply(seq(1, length(uniqueBin)), function(i){
+        DSbinSel <- VEH_20bin[[1]][VEH_20bin[[1]]$bin==uniqueBin[i], ]
+        NSbinSel <- VEH_20bin[[2]][VEH_20bin[[2]]$bin==uniqueBin[i], ]
+        
+        matchUnitIdx <- match(DSbinSel$unitIdx, NSbinSel$unitIdx)
+        NSfiring <- NSbinSel$byUnitFR[matchUnitIdx]
+        
+        DSbinSel$byUnitFR_NS <- NSfiring
+        DSbinSel$DiffFR <- DSbinSel$byUnitFR-NSfiring
+        
+        DSbinSel
+})
+)
+
+#This one compares S+ firing rate among bins only (and make a boxplot of it)
+compareBins(data=Diff_DSNS_VEH_20bins, cueExcOnly=F, color=colindx[1], ymin=-2, ymax=8, 
+            graphFolder=MixedGraphFolder, experiment="Exp 4 VEH", points=F, 
+            comparisons=list(c(3, 6), c(6, 9)), 
+            cue="S+")
+# [[1]]
+# idx       bin           n                        comp      W        p.val        p.adj sig
+# W     1   1 vs. 3  63 vs. 128 -120 to -100 vs. -80 to -60 3283.5 3.809391e-02 1.904696e-01    
+# W5    2   2 vs. 4   72 vs. 72  -100 to -80 vs. -60 to -40 1768.0 1.076802e-03 9.691219e-03  **
+# W1    3   3 vs. 5 128 vs. 126   -80 to -60 vs. -40 to -20 5079.0 1.964275e-06 1.964275e-05 ***
+# W11   4   4 vs. 6   72 vs. 69     -60 to -40 vs. -20 to 0 1763.0 8.894694e-03 7.115755e-02    
+# W2    5   5 vs. 7 126 vs. 130      -40 to -20 vs. 0 to 20 6366.0 1.248942e-02 7.493653e-02    
+# W21   6   6 vs. 8   69 vs. 74       -20 to 0 vs. 20 to 40 2165.0 1.886320e-01 5.658960e-01    
+# W3    7   7 vs. 9  130 vs. 73        0 to 20 vs. 40 to 60 3540.0 9.386944e-03 7.115755e-02    
+# W31   8  8 vs. 10   74 vs. 35       20 to 40 vs. 60 to 80  949.0 4.093962e-02 1.904696e-01    
+# W4    9  9 vs. 11   73 vs. 16      40 to 60 vs. 80 to 100  541.0 7.009865e-01 1.000000e+00    
+# W41  10 10 vs. 12   35 vs. 16     60 to 80 vs. 100 to 120  281.0 8.783626e-01 1.000000e+00    
+# 
+# [[2]]
+# bins          n              comparison    W        p.val        p.adj sig
+# W  3 vs. 6 128 vs. 69 -80 to -60 vs. -20 to 0 2246 1.641497e-07 3.282995e-07 ***
+# W1 6 vs. 9  69 vs. 73   -20 to 0 vs. 40 to 60 1709 4.590662e-03 4.590662e-03  **
+
+
+
+compareBins(data=Diff_DSNS_VEH_20bins, cueExcOnly=T, color=colindx[1], ymin=-2, ymax=8, 
+            graphFolder=MixedGraphFolder, experiment="Exp 4 VEH", points=F, 
+            comparisons=list(c(3, 6), c(6, 10)), 
+            cue="S+")
+
+
+# [[1]]
+# idx       bin         n                        comp      W        p.val        p.adj sig
+# W     1   1 vs. 3 15 vs. 41 -120 to -100 vs. -80 to -60  250.5 1.479252e-01 0.5917007147    
+# W5    2   2 vs. 4 18 vs. 29  -100 to -80 vs. -60 to -40  101.0 1.449676e-04 0.0013047085  **
+# W1    3   3 vs. 5 41 vs. 63   -80 to -60 vs. -40 to -20  673.0 1.971785e-05 0.0001971785 ***
+# W11   4   4 vs. 6 29 vs. 38     -60 to -40 vs. -20 to 0  421.0 5.075893e-02 0.3553124798    
+# W2    5   5 vs. 7 63 vs. 86      -40 to -20 vs. 0 to 20 2308.0 6.190640e-02 0.3714383717    
+# W21   6   6 vs. 8 38 vs. 53       -20 to 0 vs. 20 to 40  966.0 3.722393e-01 0.7444786444    
+# W3    7   7 vs. 9 86 vs. 56        0 to 20 vs. 40 to 60 2053.5 6.974550e-02 0.3714383717    
+# W31   8  8 vs. 10 53 vs. 23       20 to 40 vs. 60 to 80  378.0 4.502121e-03 0.0360169684   *
+# W4    9  9 vs. 11  56 vs. 8      40 to 60 vs. 80 to 100  181.0 1.941381e-01 0.5917007147    
+# W41  10 10 vs. 12  23 vs. 8     60 to 80 vs. 100 to 120  109.0 7.813806e-01 0.7813806414    
+# 
+# [[2]]
+# bins         n              comparison   W        p.val        p.adj sig
+# W  3 vs. 6 41 vs. 38 -80 to -60 vs. -20 to 0 286 2.081033e-07 4.162066e-07 ***
+# W1 6 vs. 9 38 vs. 56   -20 to 0 vs. 40 to 60 874 7.214533e-02 7.214533e-02    
+
+
+#[[2]]
+#bins         n              comparison   W        p.val        p.adj sig
+#W   3 vs. 6 41 vs. 38 -80 to -60 vs. -20 to 0 286 2.081033e-07 4.162066e-07 ***
+#W1 6 vs. 10 38 vs. 23   -20 to 0 vs. 60 to 80 263 4.537571e-03 4.537571e-03  **
+
+
+
+
+
+#Post cue AP5
+AP5_20bin <- plotFRBoxPlotandCP(cue=c("S+", "S-"), experiment="Exp 4 AP5", 
+                                masterDF=list(masterDF_DS_AP5, masterDF_NS_AP5), 
+                                graphFolder=MixedGraphFolder, trialBinSize=20, WdwStart=100, WdwEnd=400, 
+                                dataProcess="Zscores", correctOnly=FALSE, points=F, lines=F, 
+                                color=c(colindx[1], colindxB[1]), legLabels=c("S+", "S-"), 
+                                yAxMinZ=-1, yAxMaxZ=8, yAxMaxRaw=7, capped=T, 
+                                capValue=c(-120, 120), cueExcOnly=F, neudata=allNeuronsDS_AP5)
+
+
+uniqueBin <- unique(AP5_20bin[[1]]$bin)
+
+Diff_DSNS_AP5_20bins <- do.call("rbind", lapply(seq(1, length(uniqueBin)), function(i){
+        DSbinSel <- AP5_20bin[[1]][AP5_20bin[[1]]$bin==uniqueBin[i], ]
+        NSbinSel <- AP5_20bin[[2]][AP5_20bin[[2]]$bin==uniqueBin[i], ]
+        
+        matchUnitIdx <- match(DSbinSel$unitIdx, NSbinSel$unitIdx)
+        NSfiring <- NSbinSel$byUnitFR[matchUnitIdx]
+        
+        DSbinSel$byUnitFR_NS <- NSfiring
+        DSbinSel$DiffFR <- DSbinSel$byUnitFR-NSfiring
+        
+        DSbinSel
+})
+)
+
+#This one compares S+ firing rate among bins only (and make a boxplot of it)
+compareBins(data=Diff_DSNS_AP5_20bins, cueExcOnly=F, color=colindx[1], ymin=-2, ymax=8, 
+            graphFolder=MixedGraphFolder, experiment="Exp 4 AP5", points=F, 
+            comparisons=list(c(3, 6), c(6, 10)), 
+            cue="S+")
+# [[1]]
+# idx       bin          n                        comp      W        p.val       p.adj sig
+# W     1   1 vs. 3  29 vs. 97 -120 to -100 vs. -80 to -60 1262.0 0.6017925701 1.000000000    
+# W5    2   2 vs. 4  56 vs. 65  -100 to -80 vs. -60 to -40 1408.0 0.1186651063 0.818625211    
+# W1    3   3 vs. 5  97 vs. 99   -80 to -60 vs. -40 to -20 2978.5 0.0000844924 0.000844924 ***
+# W11   4   4 vs. 6  65 vs. 52     -60 to -40 vs. -20 to 0 1124.0 0.0564624495 0.471436576    
+# W2    5   5 vs. 7 99 vs. 101      -40 to -20 vs. 0 to 20 4875.5 0.8904874902 1.000000000    
+# W21   6   6 vs. 8  52 vs. 55       -20 to 0 vs. 20 to 40 1167.0 0.6242933245 1.000000000    
+# W3    7   7 vs. 9 101 vs. 80        0 to 20 vs. 40 to 60 3716.0 0.6855602334 1.000000000    
+# W31   8  8 vs. 10  55 vs. 69       20 to 40 vs. 60 to 80 1739.0 0.7408569105 1.000000000    
+# W4    9  9 vs. 11  80 vs. 45      40 to 60 vs. 80 to 100 1289.0 0.0523818417 0.471436576    
+# W41  10 10 vs. 12  69 vs. 44     60 to 80 vs. 100 to 120 1148.5 0.1169464587 0.818625211    
+# 
+# [[2]]
+# bins         n              comparison    W       p.val      p.adj sig
+# W   3 vs. 6 97 vs. 52 -80 to -60 vs. -20 to 0 1550 0.005525344 0.01105069   *
+# W1 6 vs. 10 52 vs. 69   -20 to 0 vs. 60 to 80 1582 0.767163441 0.76716344    
+
+
+
+compareBins(data=Diff_DSNS_AP5_20bins, cueExcOnly=T, color=colindx[1], ymin=-2, ymax=8, 
+            graphFolder=MixedGraphFolder, experiment="Exp 4 AP5", points=F, 
+            comparisons=list(c(3, 6), c(6, 9)), 
+            cue="S+")
+
+# [[1]]
+# idx       bin         n                        comp     W        p.val       p.adj sig
+# W     1   1 vs. 3  6 vs. 23 -120 to -100 vs. -80 to -60  29.0 0.0153593533 0.122874826    
+# W5    2   2 vs. 4 13 vs. 16  -100 to -80 vs. -60 to -40 102.0 0.4741943638 1.000000000    
+# W1    3   3 vs. 5 23 vs. 30   -80 to -60 vs. -40 to -20 162.0 0.0003906602 0.003906602  **
+# W11   4   4 vs. 6 16 vs. 20     -60 to -40 vs. -20 to 0  84.0 0.0074406581 0.066965923    
+# W2    5   5 vs. 7 30 vs. 43      -40 to -20 vs. 0 to 20 657.0 0.5553725187 1.000000000    
+# W21   6   6 vs. 8 20 vs. 23       -20 to 0 vs. 20 to 40 226.0 0.4664020778 1.000000000    
+# W3    7   7 vs. 9 43 vs. 34        0 to 20 vs. 40 to 60 719.0 0.4533248820 1.000000000    
+# W31   8  8 vs. 10 23 vs. 30       20 to 40 vs. 60 to 80 335.0 0.4328957112 1.000000000    
+# W4    9  9 vs. 11 34 vs. 22      40 to 60 vs. 80 to 100 315.0 0.1646259271 1.000000000    
+# W41  10 10 vs. 12 30 vs. 22     60 to 80 vs. 100 to 120 295.5 0.2644287350 1.000000000    
+# 
+# [[2]]
+# bins         n              comparison   W       p.val       p.adj sig
+# W  3 vs. 6 23 vs. 20 -80 to -60 vs. -20 to 0 124 0.004595229 0.009190459  **
+# W1 6 vs. 9 20 vs. 34   -20 to 0 vs. 40 to 60 338 0.489380943 0.489380943    
+
+
+# [[2]]
+# bins         n              comparison   W       p.val       p.adj sig
+# W   3 vs. 6 23 vs. 20 -80 to -60 vs. -20 to 0 124 0.004595229 0.009190459  **
+# W1 6 vs. 10 20 vs. 30   -20 to 0 vs. 60 to 80 265 0.249000033 0.249000033    
+# 
+
+
+#### HISTOGRAM
+plotFRandCPhistogram(experiment="Exp 4 All units", masterDF=list(masterDF_DS_VEH, masterDF_DS_AP5), graphFolder=MixedGraphFolder, 
+                     trialBinSize=20, dataProcess="Zscores", correctOnly=F, color=c(colindx[1], "darkblue"), 
+                     cueExcOnly = F, events=c("S+","S+"),
+                     capped=T, capValue = c(-120, 120), yAxMinZ = -1, yAxMaxZ = 5, yAxMaxRaw = 3, 
+                     psthmin=0.5, psthmax=2, imgFormat="pdf", neudata=allNeuronsDS_VEH)
+
+plotFRandCPhistogram(experiment="Exp 4 Cue excited", masterDF=list(masterDF_DS_VEH, masterDF_DS_AP5), graphFolder=MixedGraphFolder, 
+                     trialBinSize=20, dataProcess="Zscores", correctOnly=F, color=c(colindx[1], "darkblue"), 
+                     cueExcOnly = T, events=c("S+","S+"),
+                     capped=T, capValue = c(-120, 120), yAxMinZ = -1, yAxMaxZ = 5, yAxMaxRaw = 3, 
+                     psthmin=0.5, psthmax=2, imgFormat="pdf", neudata=allNeuronsDS_VEH)
+
+
+
+
+##### S+ vs S-
+
+# VEH
+PostCueFR_DSvsNS_fromCP_VEH <- compareDSvsNSfromCP(masterDF=list(masterDF_DS_VEH, masterDF_NS_VEH), cueExcOnly = F,
+                                                   trialBinSize=20, event="cue", correctOnly=F, paired=T, 
+                                                   WdwStart=100, WdwEnd=400, capped=T, capValue=c(-120, 120), 
+                                                   dataProcess="Zscores")
+
+PostCueFR_DSvsNS_fromCP_VEH$p.adj <- p.adjust(PostCueFR_DSvsNS_fromCP_VEH$p, method="holm") 
+PostCueFR_DSvsNS_fromCP_VEH$sig <- giveStars(PostCueFR_DSvsNS_fromCP_VEH$p.adj)
+
+# bin    V            p   n        p.adj sig
+# V   -120 to -100  136 3.987975e-02  29 1.196393e-01    
+# V1   -100 to -80  860 6.024391e-02  52 1.204878e-01    
+# V2    -80 to -60 3278 1.136270e-01 107 1.204878e-01    
+# V3    -60 to -40 1925 3.287149e-05  70 1.972290e-04 ***
+# V4    -40 to -20 6165 7.806722e-11 121 7.806722e-10 ***
+# V5      -20 to 0 1564 1.517169e-07  59 1.213735e-06 ***
+# v6       0 to 20 6697 9.898376e-13 124 1.187805e-11 ***
+# V7      20 to 40 2437 1.496644e-10  72 1.346979e-09 ***
+# V8      40 to 60  977 5.002221e-12  44 5.502443e-11 ***
+# V9      60 to 80  489 1.756009e-06  32 1.229206e-05 ***
+# V10    80 to 100   85 1.708984e-03  13 8.544922e-03  **
+# V11   100 to 120   96 2.014160e-03  14 8.544922e-03  **
+
+
+# AP5
+PostCueFR_DSvsNS_fromCP_AP5 <- compareDSvsNSfromCP(masterDF=list(masterDF_DS_AP5, masterDF_NS_AP5), cueExcOnly = F,
+                                                   trialBinSize=20, event="cue", correctOnly=F, paired=T, 
+                                                   WdwStart=100, WdwEnd=400, capped=T, capValue=c(-120, 120), 
+                                                   dataProcess="Zscores")
+
+PostCueFR_DSvsNS_fromCP_AP5$p.adj <- p.adjust(PostCueFR_DSvsNS_fromCP_AP5$p, method="holm") 
+PostCueFR_DSvsNS_fromCP_AP5$sig <- giveStars(PostCueFR_DSvsNS_fromCP_AP5$p.adj)
+
+# bin    V            p  n        p.adj sig
+# V   -120 to -100  172 2.728348e-01 24 2.728348e-01    
+# V1   -100 to -80  908 4.459079e-02 53 8.918157e-02    
+# V2    -80 to -60 3188 6.170370e-05 93 3.085185e-04 ***
+# V3    -60 to -40 1637 3.465306e-07 61 3.465306e-06 ***
+# V4    -40 to -20 3845 1.031251e-10 93 1.237501e-09 ***
+# V5      -20 to 0  926 2.889173e-07 45 3.178090e-06 ***
+# V6       0 to 20 3428 1.025071e-05 95 8.200571e-05 ***
+# V7      20 to 40 1108 2.852451e-06 50 2.567206e-05 ***
+# V8      40 to 60  408 5.777781e-04 31 2.311112e-03  **
+# V9      60 to 80 1559 7.466593e-04 65 2.311112e-03  **
+# V10    80 to 100  761 2.343283e-05 42 1.640298e-04 ***
+# V11   100 to 120  717 5.093772e-05 41 3.056263e-04 ***
+
+
+padjall <- p.adjust(c(PostCueFR_DSvsNS_fromCP_VEH$p, PostCueFR_DSvsNS_fromCP_AP5$p), method="holm") 
+
+PostCueFR_DSvsNS_fromCP_VEH$p.adj <- padjall[1:nrow(PostCueFR_DSvsNS_fromCP_VEH)]
+PostCueFR_DSvsNS_fromCP_AP5$p.adj <- padjall[(nrow(PostCueFR_DSvsNS_fromCP_VEH)+1):length(padjall)]
+
+
+
+# All units VEH vs AP5 side by bin of trials with respect to CP: 100-400ms after S+
+PostCueFR_DS_fromCP_VEHvsAP5_Spike <- compareVEHvsAP5fromCP(masterDF=list(masterDF_DS_VEH, masterDF_DS_AP5), 
+                                                            trialBinSize=20,  event="cue", correctOnly=F, 
+                                                            cueExcOnly = F, paired=F, WdwStart=100, WdwEnd=400, 
+                                                            capped=T, capValue=c(-80, 80), dataProcess="Zscores")
+
+
+PostCueFR_DS_fromCP_VEHvsAP5_Spike$p.adj <- p.adjust(PostCueFR_DS_fromCP_VEHvsAP5_Spike$p, method="holm") 
+PostCueFR_DS_fromCP_VEHvsAP5_Spike$sig <- giveStars(PostCueFR_DS_fromCP_VEHvsAP5_Spike$p.adj)
+# bin           n    W            p        p.adj sig
+# W  -80 to -60  128 vs. 97 5071 3.430035e-02 1.372014e-01    
+# W1 -60 to -40   72 vs. 65 2289 2.872609e-01 5.745219e-01    
+# W2 -40 to -20  126 vs. 99 5596 5.680816e-01 5.745219e-01    
+# W3   -20 to 0   69 vs. 52 1650 1.277980e-01 3.833939e-01    
+# W4    0 to 20 130 vs. 101 7210 3.264350e-03 1.958610e-02   *
+# W5   20 to 40   74 vs. 55 2233 1.794074e-02 8.970369e-02    
+# W6   40 to 60   73 vs. 80 3754 9.701067e-06 7.760854e-05 ***
+# W7   60 to 80   35 vs. 69 1490 8.601614e-04 6.021130e-03  **
+
+
+PostCueFR_DS_fromCP_VEHvsAP5_Spike <- compareVEHvsAP5fromCP(masterDF=list(masterDF_DS_VEH, masterDF_DS_AP5), 
+                                                            trialBinSize=20,  event="cue", correctOnly=F, 
+                                                            cueExcOnly = T, paired=F, WdwStart=100, WdwEnd=400, 
+                                                            capped=T, capValue=c(-80, 80), dataProcess="Zscores")
+
+
+PostCueFR_DS_fromCP_VEHvsAP5_Spike$p.adj <- p.adjust(PostCueFR_DS_fromCP_VEHvsAP5_Spike$p, method="holm") 
+PostCueFR_DS_fromCP_VEHvsAP5_Spike$sig <- giveStars(PostCueFR_DS_fromCP_VEHvsAP5_Spike$p.adj)
+# bin         n    W          p     p.adj sig
+# W  -80 to -60 41 vs. 23  381 0.10482776 0.5241388    
+# W1 -60 to -40 29 vs. 16  324 0.01446056 0.1081896    
+# W2 -40 to -20 63 vs. 30  912 0.39469484 0.8141336    
+# W3   -20 to 0 38 vs. 20  418 0.27137786 0.8141336    
+# W4    0 to 20 86 vs. 43 2052 0.15583587 0.6233435    
+# W5   20 to 40 53 vs. 23  640 0.63702343 0.8141336    
+# W6   40 to 60 56 vs. 34 1127 0.07322047 0.4393228    
+# W7   60 to 80 23 vs. 30  468 0.01352371 0.1081896  
+
+
+
+PostCueFR_DS_fromCP_VEHvsAP5_Tail <- compareVEHvsAP5fromCP(masterDF=list(masterDF_DS_VEH, masterDF_DS_AP5), 
+                                                            trialBinSize=20,  event="cue", correctOnly=F, 
+                                                            cueExcOnly = F, paired=F, WdwStart=750, WdwEnd=2000, 
+                                                            capped=T, capValue=c(-80, 80), dataProcess="Zscores")
+
+
+PostCueFR_DS_fromCP_VEHvsAP5_Tail$p.adj <- p.adjust(PostCueFR_DS_fromCP_VEHvsAP5_Tail$p, method="holm") 
+PostCueFR_DS_fromCP_VEHvsAP5_Tail$sig <- giveStars(PostCueFR_DS_fromCP_VEHvsAP5_Tail$p.adj)
+# bin           n    W            p        p.adj sig
+# W  -80 to -60  128 vs. 97 6214 2.662670e-01 7.988009e-01    
+# W1 -60 to -40   72 vs. 65 2156 4.836167e-01 9.227237e-01    
+# W2 -40 to -20  125 vs. 98 5568 4.613619e-01 9.227237e-01    
+# W3   -20 to 0   69 vs. 52 2023 3.314181e-04 1.325672e-03  **
+# W4    0 to 20 130 vs. 101 7932 1.004631e-05 6.027789e-05 ***
+# W5   20 to 40   74 vs. 55 2648 1.141973e-05 6.027789e-05 ***
+# W6   40 to 60   58 vs. 38 1453 3.575525e-06 2.502868e-05 ***
+# W7   60 to 80   35 vs. 69 1831 6.058191e-09 4.846553e-08 ***
+
+
+
+PostCueFR_DS_fromCP_VEHvsAP5_Tail <- compareVEHvsAP5fromCP(masterDF=list(masterDF_DS_VEH, masterDF_DS_AP5), 
+                                                           trialBinSize=20,  event="cue", correctOnly=F, 
+                                                           cueExcOnly = T, paired=F, WdwStart=750, WdwEnd=2000, 
+                                                           capped=T, capValue=c(-80, 80), dataProcess="Zscores")
+
+
+PostCueFR_DS_fromCP_VEHvsAP5_Tail$p.adj <- p.adjust(PostCueFR_DS_fromCP_VEHvsAP5_Tail$p, method="holm") 
+PostCueFR_DS_fromCP_VEHvsAP5_Tail$sig <- giveStars(PostCueFR_DS_fromCP_VEHvsAP5_Tail$p.adj)
+# bin         n    W            p        p.adj sig
+# W  -80 to -60 41 vs. 23  499 3.538534e-01 7.077068e-01    
+# W1 -60 to -40 29 vs. 16  237 5.512983e-01 7.077068e-01    
+# W2 -40 to -20 63 vs. 30  823 1.590051e-01 4.770153e-01    
+# W3   -20 to 0 38 vs. 20  485 4.371546e-02 2.185773e-01    
+# W4    0 to 20 86 vs. 43 2149 6.728163e-02 2.691265e-01    
+# W5   20 to 40 53 vs. 23  855 2.801184e-03 1.960829e-02   *
+# W6   40 to 60 46 vs. 17  542 9.382288e-03 5.629373e-02    
+# W7   60 to 80 23 vs. 30  592 1.280599e-06 1.024479e-05 ***

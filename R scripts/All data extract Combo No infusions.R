@@ -24,7 +24,6 @@ colindxD <- c("#6baed6", "#fee5d9") #Lightest blue and red
 ### DEFINE ALL THE IMPORTANT FOLDERS
 
 funcdirect <- paste(getwd(), "/R functions/", sep="")
-#funcdirect <- paste(getwd(), "/EXP4_Unilateral AP5/R functions/", sep="")
 datafolder <- paste(getwd(), "/Combo No infusions/MedPC files/", sep="")
 dataForRdir <- paste(getwd(), "/Combo No infusions/Data for R/", sep="")
 dataForRCumulative <- paste(getwd(), "/Combo No infusions/Data for R cumulative/", sep="")
@@ -250,7 +249,7 @@ CPdata$TotalRewardsShortLat <- sapply(seq(1, length(rats)), function(x){
 })
 
 
-#lEARNERS: TOTAL TRIALS TO CP VS. NUMBER OF REWARDS
+#LEARNERS: TOTAL TRIALS TO CP VS. NUMBER OF REWARDS
 plot.new()
 plot.window(xlim=c(0, 2), ylim=c(0, 216))
 
@@ -760,6 +759,14 @@ wilcox.test(x=forAnalysis$byUnitFR[forAnalysis$cue=="S+"],
 # alternative hypothesis: true location shift is not equal to 0
 
 
+#This will give me a summary by trial for S+ and for S- on day 1
+Day1_TrialUnit <- plotFRBoxPlotandCP(cue=c("S+", "S-"), experiment="All not down Sess 1 1-40 BOXPLOTS DOWN S+ vs S-", 
+                                     masterDF=list(masterDF_DS_Day1_D, masterDF_NS_Day1_D), 
+                                     points=F, lines=F, graphFolder=MixedGraphFolder, trialBinSize=8, 
+                                     WdwStart=100, WdwEnd=400, dataProcess="Zscores", correctOnly=FALSE, 
+                                     color=c(colindx, colindxB), legLabels=c("S+ D","S- D"), 
+                                     yAxMinZ=-3, yAxMaxZ=10, yAxMaxRaw=7, capped=T, capValue=c(0, 40), cueExcOnly=F, 
+                                     neudata=allNeuronsDS)
 
 
 

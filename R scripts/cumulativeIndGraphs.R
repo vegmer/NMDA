@@ -5,7 +5,7 @@
 
 cumulativeIndGraphs <- function(numSess=6, numCues=35, smartRat=T, CPraw=CPrawdata, CPvector=CPdata$CP, sessLines=F, dataForRCumulative, dataForRdir, graphFolder, imgFormat="pdf", limit=210){
         #Names for graph titles. Make sure they are in the same order that these objects are loaded from the folder in the next line
-        longNames <- c("S+ latency", "S+ resp ratio", "S+ specificity", "S+ time to spare", "ITI latency", "S- latency", "S- resp ratio", "S- specificity", "S- time to spare")
+        longNames <- c("S+ latency", "S+ resp ratio", "S+ specificity", "S+ time to spare", "ITI latency", "ITI response ratio", "S- latency", "S- resp ratio", "S- specificity", "S- time to spare")
         
         # Load relevant objects and create object 'cumData' with the labels for each object
         filesCum <- paste(dataForRCumulative, list.files(dataForRCumulative), sep=""); cumData <- sapply(seq(1, length(filesCum)), function(i){load(filesCum[[i]])})
@@ -25,7 +25,7 @@ cumulativeIndGraphs <- function(numSess=6, numCues=35, smartRat=T, CPraw=CPrawda
                 
                 #Cap the number of trials I want for my graphs
                 if(!is.na(limit)){
-                        if(j!=5){data <- lapply(seq(1, length(data)), function(q){
+                        if(j!=5 | j!=6){data <- lapply(seq(1, length(data)), function(q){
                                         dat <- data[[q]][1:limit]
                                         NAs <- is.na(dat)
                                         if(sum(NAs)<=10){
@@ -37,13 +37,13 @@ cumulativeIndGraphs <- function(numSess=6, numCues=35, smartRat=T, CPraw=CPrawda
                                 })
                         }
                         
-                        if(j==5){data <- lapply(seq(1, length(data)), function(q){data[[q]][1:(2*limit)]})} #j=5 is ITI latency, which includes DS and NS trials. So in this case the limit should be the double of the limit.
+                        #j=5 is ITI latency and j=6 is ITI resp ratio. These vectors include DS and NS trials. So in this case the limit should be the double of the limit.
+                        if(j==5 | j==6){data <- lapply(seq(1, length(data)), function(q){data[[q]][1:(2*limit)]})} 
                         
                 }
                 
                 #Establish # of cues per session and in total (generalized from 1 animal, if there are individual differences, check)
                 #numCues <- length(alldata[[idx[[1]][1]]]$CSpluscue)
-                numSess <- numSess
                 #totalCues <- numCues*numSess
                 totalCues <- max(sapply(data, length))
                 
@@ -66,6 +66,7 @@ cumulativeIndGraphs <- function(numSess=6, numCues=35, smartRat=T, CPraw=CPrawda
                 if(grepl("resp ratio", longNames[j])==T){ymin=0; ymax=300}
                 if(grepl("latency", longNames[j])==T){ymin=0; ymax=2500}
                 if(grepl("ITI latency", longNames[j])==T){ymin=0; ymax=6000}
+                if(grepl("ITI response ratio", longNames[j])==T){ymin=0; ymax=400}
                 
                 
                 plot.window(xlim=c(0, totalCues+numCues), ylim=c(ymin, ymax+10))
@@ -130,8 +131,6 @@ cumulativeIndGraphs <- function(numSess=6, numCues=35, smartRat=T, CPraw=CPrawda
         })
 }
 
-save(cumulativeIndGraphs, file=paste("E:/Dropbox/NMDA/EXP3_NAc FR acquisition/R functions/cumulativeIndGraphs.R"))
 save(cumulativeIndGraphs, file=paste("E:/Dropbox/NMDA/R functions/cumulativeIndGraphs.R"))
-save(cumulativeIndGraphs, file=paste("E:/Dropbox/NMDA/EXP4_Unilateral AP5/R functions/cumulativeIndGraphs.R"))
 
 
