@@ -6,9 +6,9 @@ When you make changes to this folder, sync those changes with the repository in 
 
 # Open Git Bash
 # Change directory to this folder by writing:
-	cd /e/Dropbox/NMDA
+	cd /e/Dropbox\ \(EinsteinMed\)/NMDA
 # You can see the contents of the folder by writing:
-	ls
+	dir
 # Stage all the changes you want to save:
 	git add .
 # Commit changes to your local repository (this is similar to the traditional "Save" function)
